@@ -1,5 +1,4 @@
 (function () {
-	//you can't create elements with this function
 	window.j = function(selector) {
 		selector = selector || '';
 		return new j.fn.init(selector);
@@ -29,17 +28,19 @@
 			} else {
 				query = document.querySelectorAll(selector);
 			}
-		} else if(selector instanceof Array || selector instanceof NodeList || selector instanceof HTMLCollection || (selector.j && !selector.window)) {
+		} else if(selector instanceof Array || selector instanceof NodeList || selector instanceof HTMLCollection || selector instanceof j) {
 			query = selector;
 		} else if((window.Node && selector instanceof Node) || selector == selector.window) {
 			query = [selector];
+		} else if(typeof selector === 'function') {
+			query = [document];
+			document.addEventListener("DOMContentLoaded", selector);
 		} else {
 			query = [];
 		}
 
 		//save selector length
 		this.length = query.length;
-		this.j = true;//flag shows that this is j collection
 
 		for (var i = 0, l = this.length; i < l ;i++) {
 			this[i] = query[i];
@@ -197,6 +198,11 @@ j.inArray = function (arr, el) {
 }
 
 
+//document ready event
+j.fn.ready = function (fn) {
+	document.addEventListener("DOMContentLoaded", fn);
+}
+
 //(string|dom element|query|j collection)
 j.fn.add = function (selector) {
 	var newCollection = [],
@@ -212,7 +218,7 @@ j.fn.add = function (selector) {
 		newQuery = $(selector);
 	} else if(selector.nodeType || selector === document || selector === window) {
 		newQuery = [selector]
-	} else if(selector.j && !selector.window) {
+	} else if(selector instanceof j) {
 		newQuery = selector;
 	}
 
@@ -1066,13 +1072,10 @@ j.fn._scroll = function (dir) {
 		var supportPageOffset = window.pageXOffset !== undefined;
 		var isCSS1Compat = ((document.compatMode || "") === "CSS1Compat");
 
-		var x = supportPageOffset ? window.pageXOffset : isCSS1Compat ? document.documentElement.scrollLeft : document.body.scrollLeft;
-		var y = supportPageOffset ? window.pageYOffset : isCSS1Compat ? document.documentElement.scrollTop : document.body.scrollTop;
-
 		if(dir === 'x') {
-			return x;
+			return supportPageOffset ? window.pageXOffset : isCSS1Compat ? document.documentElement.scrollLeft : document.body.scrollLeft;
 		} else if(dir === 'y') {
-			return y;
+			return supportPageOffset ? window.pageYOffset : isCSS1Compat ? document.documentElement.scrollTop : document.body.scrollTop;
 		}
 	} else {
 		if(dir === 'x') {
@@ -1090,6 +1093,25 @@ j.fn.scrollTop = function () {
 j.fn.scrollLeft = function () {
 	return j.fn._scroll.call(this, 'x');
 }
+
+j.fn.outerWidth = function () {
+	return this[0].offsetWidth;
+};
+
+j.fn.outerHeight = function () {
+	return this[0].offsetHeight;	
+}
+
+
+
+
+
+
+
+
+
+
+
 
 // j.fn.transform = function (transform) {
 // 	return this.each(function () {

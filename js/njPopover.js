@@ -1,5 +1,5 @@
  /*!
- * njTooltip - v0.1
+ * njPopover - v0.2
  * nejikrofl@gmail.com
  * Copyright (c) 2015 N.J.
 */
@@ -7,38 +7,51 @@
 'use strict';
 var $ = window.jQuery || window.j;
 
+if(!$) {
+	throw new Error('njPopover requires jQuery or "j" library (https://github.com/Nejik/j)');
+	return false;
+}
 
 //constructor
-window.njPopover = function (opts) {
+window.njPopover = function(opts) {
 	opts = opts || {};
-	if(!(this instanceof njPopover)) {//when we call njTabs not as a contructor, make instance and call it
-		// return new njPopover(opts);
-		return;
+
+	if(!(this instanceof njPopover)) {//when we call njPopover not as a contructor, make instance and call it
+		return new njPopover(opts);
 	}
 
+	this._init(opts);
+	return this;
+};
+
+njPopover.forElement = function (elem) {//return instance
+	return $(elem)[0].njPopover;
+}
+
+var proto = njPopover.prototype;
+
+proto._init = function (opts) {
+	opts = opts || {};
 	var o = this.o = $.extend(true, {}, njPopover.defaults, opts),
 		that = this;
-
-	o.$elem = $(o.elem);
 
 	this._o = {};//inner options
 
 	this.v = {};//object with cached variables
+
+	o.$elem = $(o.elem);
+	o.elem = $(o.elem)[0];
 
 	if(o.attr === 'title') {
 		this._o.origTitle = o.$elem.attr(o.attr);
 		o.elem.removeAttribute(o.attr);
 	}
 
-	//bind
 	if(o.trigger) {
 		var showEvent = '',
 			hideEvent = '';
+
 		switch(o.trigger) {
-		case 'hover':
-			showEvent = 'mouseenter.njp'
-			hideEvent = 'mouseleave.njp'
-		break;
 		case 'click':
 			o.$elem.on('click.njp', function (e) {
 						e.preventDefault();
@@ -51,11 +64,16 @@ window.njPopover = function (opts) {
 
 					})
 		break;
+		case 'hover':
+			showEvent = 'mouseenter.njp'
+			hideEvent = 'mouseleave.njp'
+		break;
+		
 		case 'focus':
 			showEvent = 'focus.njp'
 			hideEvent = 'blur.njp'
 		break;
-		case 'mouse':
+		case 'follow':
 			o.$elem.on('mouseenter.njp', function (e) {
 						this.njPopover.show();
 
@@ -69,7 +87,6 @@ window.njPopover = function (opts) {
 			})
 		break;
 		}
-
 
 		if(showEvent) {
 			o.$elem.on(showEvent, function (e) {
@@ -100,310 +117,47 @@ window.njPopover = function (opts) {
 	o.elem.njPopover = this;
 }
 
-var njt = njPopover.prototype;
-
-njt.show = function () {
+proto.show = function () {
 	if(this._o.shown) return;
 	var o = this.o,
-		that = this;
+			that = this;
 
-	this._gatherData();
-	
-	this.v.container = $(o.container);
-
-
-	this.v.tooltip = document.createElement('div');
-	this.v.tooltip.className += 'njPopover';
-	this.v.tooltip = $(this.v.tooltip);
-
-	if(o.html) {
-		this.v.tooltip.html(o.content);
-	} else {
-		this.v.tooltip.text(o.content);
-	}
-
-	if(o.waitImg) {
-		var img = this.v.tooltip.find('img'),
-			img2wait = $([]);
-
-		if(img.length) {
-			img.each(function (i,el) {
-				if($(el).attr('data-njp-img') != undefined) {
-					img2wait = img2wait.add(el);
-				}
-			})
-			if(img2wait.length) {
-				img2wait.each(function (i,el) {
-					findImgSize(el);
-				})
-			} else {
-				insertPopover.call(this);
-			}
-		} else {
-			insertPopover.call(this);
-		}
-	} else {
-		insertPopover.call(this);
-	}
-
-
-
-
-	function findImgSize(img) {
-		var counter = 0,
-			interval,
-			clonedImg = new Image();
-
-		clonedImg.src = img.src;
-
-		var njmSetInterval = function(delay) {
-			if(interval) {
-				clearInterval(interval);
-			}
-			interval = setInterval(function() {
-				if(clonedImg.width > 0) {
-					img.njpReady = true;
-					checkAllImgsReady();
-
-					clearInterval(interval);
-					return;
-				}
-
-				if(counter > 200) {
-					clearInterval(interval);
-				}
-
-				counter++;
-				if(counter === 3) {
-					njmSetInterval(10);
-				} else if(counter === 40) {
-					njmSetInterval(50);
-				} else if(counter === 100) {
-					njmSetInterval(500);
-				}
-			}, delay);
-		};
-
-		
-
-		njmSetInterval(1);
-	}
-
-	function checkAllImgsReady() {
-		var length = img2wait.length,
-			ready = 0;
-
-		img2wait.each(function (i,el) {
-			if(el.njpReady) ready += 1;
-		})
-
-		if(ready === length) {
-			insertPopover.call(that)	
-		}
-	}
-
-
-
-
-
-	function insertPopover() {
-		this.v.container.append(this.v.tooltip);
- 		this.setPosition();
-
-		this.v.tooltip[0].njPopover = this;
-		this._o.shown = true;
-	}
-
-
-
-	if(o.out) {
-		$(document).on('click.njp.njp_out', function (e) {
-			var $el = $(e.target);
-
-			if($el[0] !== o.elem && !$el.closest('.njPopover').length) {
-				that.hide();
-			}
-		})
-	}
+	this._o.shown = true;
 }
 
-njt.setPosition = function (ev) {
-	var  o = this.o;
+proto.hide = function () {
+	console.log('hide')
 
-	var eC = this._o.elemCoords = this._getCoords(o.elem);//elCoords
-	var tC = this._o.tooltipCoords = this._getCoords(this.v.tooltip[0]);//toltip coords, coords before position we need fo outerWidth/outerHeight
-
-	if(o.trigger === 'mouse') {
-		if(ev) {
-			this.v.tooltip.css({'left':ev.pageX + o.margin +'px',"top":ev.pageY + o.margin +'px'})
-		}
-	} else {
-		findCoords.call(this, o.placement);
-	}
-
-	function findCoords(placement, stop) {//stop flag needed to prevent endless recursion if both placements wrong
-		var left,top;
-		
-		switch(placement) {
-		case 'bottom':
-			var left = eC.left + (eC.width - tC.width)/2^0;//^0 - round
-			var top = eC.top + eC.height + o.margin;
-		break;
-
-		case 'top':
-			var left = eC.left + (eC.width - tC.width)/2^0;//^0 - round
-			var top = eC.top - tC.height - o.margin;
-		break;
-		case 'left':
-			var left = eC.left - o.margin - tC.width;
-			var top = eC.top + (eC.height - tC.height)/2^0;
-		break;
-		case 'right':
-			var left = eC.right + o.margin;
-			var top = eC.top + (eC.height - tC.height)/2^0;
-		break;
-		}
-
-		//reorient popover
-		if(o.auto && !stop) {//stop - flag to prevent infinite change position
-			if(placement === 'left' && left < 0) {
-				findCoords.call(this, 'right', 'stop');
-				return;
-			}
-			if(placement === 'right' && left > document.documentElement.clientWidth - tC.width) {
-				findCoords.call(this, 'left', 'stop');
-				return;
-			}
-			if(placement === 'top' && top < 0) {
-				findCoords.call(this, 'bottom', 'stop');
-				return;
-			}
-			if(placement === 'bottom' && top > document.body.scrollHeight - tC.height) {
-				findCoords.call(this, 'top', 'stop');
-				return;
-			}
-		}
-
-		//take popover in document
-		if(o.inDocument) {
-			// if(placement === 'bottom' || placement === 'top') {
-				if(left < 0) left = 0;
-				var maxLeft = document.documentElement.clientWidth - tC.width;
-				if(left > maxLeft) left = maxLeft;
-
-			// } else if(placement === 'left' || placement === 'right') {
-				if(top < 0) top = 0;
-				var maxTop = document.body.scrollHeight - tC.height;
-				if(top > maxTop) top = maxTop;
-			// }
-		}
-
-		this.v.tooltip.css({'left':left+'px',"top":top+'px'})
-	}
-}
-
-njt.hide = function () {
-	if(!this._o.shown) return;
-	var o = this.o;
-	this.v.tooltip.remove();
-
-	delete this.v.tooltip;
-	this.o.content = null;
-
-	$(document).off('click.njp_out');
 	this._o.shown = false;
 }
 
+proto.setPosition = function () {
+	console.log('move')
+}
 
 
-
-njt._gatherData = function () {
-	var o = this.o,
-		el = o.$elem,
-		dataO = el.data(),//data original
-		dataMeta = {};//data processed
-
-	//get data from data attributes
-	for (var p in dataO) {//use only data properties with njt prefix
-		if (dataO.hasOwnProperty(p) && /^njp[A-Z]+/.test(p) ) {
-			var shortName = p.match(/^njp(.*)/)[1],
-				shortNameLowerCase = shortName.charAt(0).toLowerCase() + shortName.slice(1);
-
-			dataMeta[shortNameLowerCase] = checkval(dataO[p]);
-		}
-	}
-	function checkval(val) {
-		//make boolean from string
-		if(val === 'true') {
-			return true;
-		} else if(val === 'false') {
-			return false;
-		} else {
-			return val;
-		}
-	}
-
-
-	$.extend(true, o, dataMeta);
-
-
-	if(o.attr === 'title') {
-		o.content = el.attr(o.attr) || this._o.origTitle;
-	}
+proto.destroy = function () {
 	
-};
-
-
-
-
-njt._getCoords = function (elem) {
-	var box = elem.getBoundingClientRect();
-	
-	var body = document.body;
-	var docEl = document.documentElement;
-
-	var scrollTop = window.pageYOffset || docEl.scrollTop || body.scrollTop;
-	var scrollLeft = window.pageXOffset || docEl.scrollLeft || body.scrollLeft;
-
-	var clientTop = docEl.clientTop || body.clientTop || 0;
-	var clientLeft = docEl.clientLeft || body.clientLeft || 0;
-
-	// var top  = box.top +  scrollTop - clientTop;
-	// var left = box.left + scrollLeft - clientLeft;
-
-	return { 
-		top: box.top + scrollTop - clientTop,
-		left: box.left + scrollLeft - clientLeft,
-
-		right: box.right,
-		bottom: box.bottom,
-		width: box.right - box.left,
-		height: box.bottom - box.top
-	};
 }
 
 njPopover.defaults = {
-	container: 'body',
+	container: 'body',//(selector) appends the tooltip to a specific element
 
-	attr: 'title',
-	type: 'text',//(text||html||selector)
-	html: true,
+	template:'',//(string) base HTML to use when creating the popover.
+	attr: 'title',//get content for tooltip form this attribute
+	type: 'text',//(text || html || selector) type of content, if selector used, whole element will be inserted in tooltip
+	content: '',//(string || function) content for tooltip
 
 	waitImg: true,//if we have img in tooltip with [data-njp-img="true"], wait until img begin downloading(to know it's size), only than show tooltip
 	
-	trigger: 'click',//(click || hover || focus || mouse)
-	out: true,//click outside popover will close it
-	margin: 5,
-	placement: 'top',
-	auto: true,
-	inDocument: true
-}
+	trigger: 'click',//(false || click || hover || focus || follow) how popover is triggered. false - manual triggering
+	out: true,//(boolean) click outside popover will close it
+	margin: 5,//(number) margin from element
 
-//autobind
-$(function() {
-	$('['+njPopover.defaults.attr+']').each(function () {
-		new njPopover({elem:this});
-	})
-});
+	placement: 'top',//(top || bottom || left || right) how to position the popover
+	auto: true,//(boolean) this option dynamically reorient the popover. For example, if placement is "left", the popover will display to the left when possible, otherwise it will display right.
+
+	viewport: 'document'//(selector || false) keeps the popover within the bounds of this element.
+}
 
 })(window, document);

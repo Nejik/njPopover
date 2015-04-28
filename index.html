@@ -14,7 +14,6 @@
 		<link rel="stylesheet" href="css/base.css">
 		<link rel="stylesheet" href="css/main.css">
 		<link rel="stylesheet" href="css/main2.css">
-		<link rel="stylesheet" href="css/njPopover.css">
 
 
 
@@ -47,15 +46,25 @@
 		<a href="#!" class="test" style="margin-left:0px;" title='<img src="http://www.a-pdf.com/faq/i/assistant_for_your_flipbook1.jpg" alt="" style="width:360px;height:363px;" />'>tooltip</a>
 
 
-		// <script src="js/j.js"></script>
+		<script src="js/j.js"></script>
 		<!-- // <script src="js/jquery-1.11.2.min.js"></script> -->
-		// <script src="js/njPopover.js"></script>
+		<script src="js/njPopover.js"></script>
 
 		<script>
 			
 
 			
 		</script>
-		<div id="testme">tesetem</div>
+		<script>
+			$('.test')
+			var t = new njPopover({
+				elem: $('.test'),
+				trigger: 'hover'
+			});
+
+			var myDropzone = new Dropzone(document.body, { // Make the whole body a dropzone
+			  url: "/target-url" // Set the url
+			});
+		</script>
 	</body>
 </html>
