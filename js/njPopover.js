@@ -40,7 +40,9 @@ proto._init = function (opts) {
 	this.v = {};//object with cached variables
 
 	o.$elem = $(o.elem);
-	o.elem = $(o.elem)[0];
+	o.elem = $(o.elem)[0];//for case if we get jquery object in o.elem
+
+	if(o.elem.njPopover) return;//we can't initialize 2 times
 
 	if(o.attr === 'title') {
 		this._o.origTitle = o.$elem.attr(o.attr);
@@ -122,11 +124,39 @@ proto.show = function () {
 	var o = this.o,
 			that = this;
 
+	this._gatherData();
+
+	this.v.popover = $(o.template);
+
+	//find element where we should set content
+	(this.v.popover.is('[data-njPopover-content]')) 
+													? this.v.contentEl = this.v.popover 
+													: this.v.contentEl = this.v.popover.find('[data-njPopover-content]');
+
+	//todo, обработать случай, если content функция
+	switch(o.type) {
+	case 'text':
+		this.v.contentEl.text(o.content)
+	break;
+	case 'html':
+		this.v.contentEl.html(o.content)
+	break;
+	case 'selector':
+		var content = $(o.content);
+		if(content.length) this.v.popover.append(content);
+	break;
+	}
+
+	
+
+
+	// console.log('show')
+
 	this._o.shown = true;
 }
 
 proto.hide = function () {
-	console.log('hide')
+	// console.log('hide')
 
 	this._o.shown = false;
 }
@@ -138,12 +168,51 @@ proto.setPosition = function () {
 
 proto.destroy = function () {
 	
+
+
+	if(this._o.origTitle) {//вернуть аттрибут на место
+		
+	}
 }
+
+
+proto._gatherData = function () {
+	var o = this.o,
+		el = o.$elem,
+		dataO = el.data(),//data original
+		dataMeta = {};//data processed
+
+	//get data from data attributes
+	for (var p in dataO) {//use only data properties with njp prefix
+		if (dataO.hasOwnProperty(p) && /^njp[A-Z]+/.test(p) ) {
+			var shortName = p.match(/^njp(.*)/)[1],
+				shortNameLowerCase = shortName.charAt(0).toLowerCase() + shortName.slice(1);
+
+			dataMeta[shortNameLowerCase] = checkval(dataO[p]);
+		}
+	}
+	function checkval(val) {
+		//make boolean from string
+		if(val === 'true') {
+			return true;
+		} else if(val === 'false') {
+			return false;
+		} else {
+			return val;
+		}
+	}
+
+	if(o.attr === 'title') {
+		o.content = el.attr(o.attr) || this._o.origTitle;//for case if we add attribute dynamically
+	}
+	
+	$.extend(true, o, dataMeta);
+};
 
 njPopover.defaults = {
 	container: 'body',//(selector) appends the tooltip to a specific element
 
-	template:'',//(string) base HTML to use when creating the popover.
+	template:'<div class="njPopover" data-njPopover-content></div>',//(string) base HTML to use when creating the popover.
 	attr: 'title',//get content for tooltip form this attribute
 	type: 'text',//(text || html || selector) type of content, if selector used, whole element will be inserted in tooltip
 	content: '',//(string || function) content for tooltip
