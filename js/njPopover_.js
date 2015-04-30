@@ -216,15 +216,7 @@ njt.show = function () {
 
 
 
-	if(o.out) {
-		$(document).on('click.njp.njp_out', function (e) {
-			var $el = $(e.target);
-
-			if($el[0] !== o.elem && !$el.closest('.njPopover').length) {
-				that.hide();
-			}
-		})
-	}
+	
 }
 
 njt.setPosition = function (ev) {
