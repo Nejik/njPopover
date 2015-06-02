@@ -146,6 +146,9 @@ proto.setPosition = function (e) {
 		eC = this._o.elemCoords = getCoords(o.elem),//trigger element coordinates
 		tC = this._o.tooltipCoords = getCoords(this.v.popover[0]);//popover coordinates(coordinates now fake, from this var we need outerWidth/outerHeight)
 
+	var left,
+		top,
+
 	if(o.viewport && this.v.viewport.length) {
 		var vC = this._o.viewportCoords = getCoords(this.v.viewport[0]);//viewport coordinates
 	}
@@ -159,10 +162,7 @@ proto.setPosition = function (e) {
 	}
 
 	function findCoords(placement, reorient) {//stop flag needed to prevent endless recursion if both placements wrong
-		var left,
-			top,
-
-			minLeft,
+		var minLeft,
 			maxLeft,
 			minTop,
 			maxTop;
@@ -206,10 +206,12 @@ proto.setPosition = function (e) {
 		}
 
 		//reorient position if no space
+		if(o.auto) {
+			
+		}
+
+
 		
-
-
-		this.v.popover.css({'left':left+'px',"top":top+'px'})
 
 		
 
@@ -246,10 +248,9 @@ proto.setPosition = function (e) {
 		// 		if(top > maxTop) top = maxTop;
 		// 	// }
 		// }
-
-		
 	}
 
+	this.v.popover.css({'left':left+'px',"top":top+'px'})
 	
 
 
