@@ -54,7 +54,7 @@ proto._init = function (opts) {
 }
 
 proto.show = function () {
-	if(this._o.shown) return;
+	if(this._o.status === 'shown') return;
 	//todo: заготовка для аякса
 	// if(this._o.shown && opts) {
 	// 	//opts - передавать в arguments
@@ -62,14 +62,16 @@ proto.show = function () {
 	var o = this.o,
 			that = this;
 
-	this._gatherData();
+	this._gatherData();//update our settings
 
-	if(typeof o.content === 'function') o.content = o.content();
+	if(typeof o.content === 'function') o.content = o.content.call(this);
 	if(!o.content) return;//don't show popover, if we have no content for popover
 
 	this.v.container = $(o.container);
 	this.v.popover = $(o.template);
 	this.v.popover[0].njPopover = this;
+
+	(o.viewport && o.viewport === 'document') ? this.v.viewport = $(document) : this.v.viewport = $(o.viewport);
 
 	//find element where we should set content
 	(this.v.popover.is('[data-njPopover]')) 
@@ -94,8 +96,10 @@ proto.show = function () {
 	break;
 	}
 
+	//toDo waitImg
 
-	this._o.status = 'loading';
+
+	this._o.status = 'inserting';
 
 	this._insertPopover();
 }
@@ -107,7 +111,6 @@ proto._insertPopover = function () {
 	this.setPosition();
 
 	this._o.status = 'shown';
-	this._o.shown = true;
 	//todo
 	// if(o.out) {
 	// 	$(document).on('click.njp.njp_out', function (e) {
@@ -122,24 +125,181 @@ proto._insertPopover = function () {
 
 
 proto.hide = function () {
-	if(!this._o.shown) return;
+	if(this._o.status !== 'shown') return;
 	var o = this.o;
 	this.v.popover.remove();
 
 	delete this.v.popover;
 	// this.o.content = null;??зачем это было - хз
 
-	
 	//todo
 	// $(document).off('click.njp_out');
 	this._o.status = 'hide';//toDO - make hidden status
-	this._o.shown = false;
 }
 
-proto.setPosition = function () {
-	this.v.popover.css({'position': 'absolute',
-						'left':0+'px',
-	                   'top':0+'px'})
+proto.setPosition = function (e) {
+	// this.v.popover.css({'position': 'absolute',
+	// 					'left':0+'px',
+	//                    'top':0+'px'})
+
+
+	var o = this.o,
+		that = this,
+		eC = this._o.elemCoords = getCoords(o.elem),//trigger element coordinates
+		tC = this._o.tooltipCoords = getCoords(this.v.popover[0]),//popover coordinates(coordinates now fake, from this var we need outerWidth/outerHeight)
+		vC = this._o.viewportCoords = getCoords(this.v.viewport[0]);//viewport coordinates
+
+	// console.log(vC)
+	if(o.trigger === 'follow') {
+		if(e) {
+			// this.v.popover.css({'left':e.pageX + o.margin +'px',"top":e.pageY + o.margin +'px'})
+		}
+	} else {
+		findCoords.call(this, o.placement);
+	}
+
+	function findCoords(placement, reorient) {//stop flag needed to prevent endless recursion if both placements wrong
+		var left,
+			top,
+
+			minLeft,
+			maxLeft,
+			minTop,
+			maxTop;
+
+
+		switch(placement) {
+		case 'bottom':
+			left = eC.left + (eC.width - tC.width)/2^0;//^0 - round
+			top = eC.top + eC.height + o.margin;
+		break;
+
+		case 'top':
+			left = eC.left + (eC.width - tC.width)/2^0;//^0 - round
+			top = eC.top - tC.height - o.margin;
+
+
+		break;
+		case 'left':
+			left = eC.left - o.margin - tC.width;
+			top = eC.top + (eC.height - tC.height)/2^0;//^0 - round
+		break;
+		case 'right':
+			left = eC.right + o.margin;
+			top = eC.top + (eC.height - tC.height)/2^0;//^0 - round
+		break;
+		}
+
+		//fix position for viewport
+		if(this.v.viewport.length) {
+			minLeft = vC.left;
+			maxLeft = vC.right - tC.width;
+			minTop = vC.top;
+			maxTop = vC.bottom - tC.height;
+
+
+			if(left < minLeft) left = minLeft;
+			if(left > maxLeft) left = maxLeft;
+			
+			if(top < minTop) top = minTop;
+			if(top > maxTop) top = maxTop;
+		}
+
+		//reorient position if no space
+		
+
+
+		this.v.popover.css({'left':left+'px',"top":top+'px'})
+
+		
+
+		// //reorient popover
+		// if(o.auto && !stop) {//stop - flag to prevent infinite change position
+		// 	if(placement === 'left' && left < 0) {
+		// 		findCoords.call(this, 'right', 'stop');
+		// 		return;
+		// 	}
+		// 	if(placement === 'right' && left > document.documentElement.clientWidth - tC.width) {
+		// 		findCoords.call(this, 'left', 'stop');
+		// 		return;
+		// 	}
+		// 	if(placement === 'top' && top < 0) {
+		// 		findCoords.call(this, 'bottom', 'stop');
+		// 		return;
+		// 	}
+		// 	if(placement === 'bottom' && top > document.body.scrollHeight - tC.height) {
+		// 		findCoords.call(this, 'top', 'stop');
+		// 		return;
+		// 	}
+		// }
+
+		// //take popover in document
+		// if(o.inDocument) {
+		// 	// if(placement === 'bottom' || placement === 'top') {
+		// 		if(left < 0) left = 0;
+		// 		var maxLeft = document.documentElement.clientWidth - tC.width;
+		// 		if(left > maxLeft) left = maxLeft;
+
+		// 	// } else if(placement === 'left' || placement === 'right') {
+		// 		if(top < 0) top = 0;
+		// 		var maxTop = document.body.scrollHeight - tC.height;
+		// 		if(top > maxTop) top = maxTop;
+		// 	// }
+		// }
+
+		
+	}
+
+	
+
+
+
+
+
+
+
+
+
+
+
+
+	function getCoords(elem) {
+		if(elem === document) {
+			var body = $('body')[0],
+				html = $('html')[0],
+				width = document.body.scrollWidth,
+				height = Math.max( body.scrollHeight, body.offsetHeight, 
+                       html.clientHeight, html.scrollHeight, html.offsetHeight);
+			return {
+				top:0,
+				left:0,
+
+				right: width,
+				bottom: height,
+				width: width,
+				height: height
+			}
+		}
+		var box = elem.getBoundingClientRect();
+		
+		var body = document.body,
+			docEl = document.documentElement,
+
+			scrollTop = window.pageYOffset || docEl.scrollTop || body.scrollTop,
+			scrollLeft = window.pageXOffset || docEl.scrollLeft || body.scrollLeft,
+			clientTop = docEl.clientTop || body.clientTop || 0,
+			clientLeft = docEl.clientLeft || body.clientLeft || 0;
+
+		return { 
+			top: box.top + scrollTop - clientTop,
+			left: box.left + scrollLeft - clientLeft,
+
+			right: box.right + scrollLeft - clientLeft,
+			bottom: box.bottom + scrollTop - clientTop,
+			width: box.right - box.left,
+			height: box.bottom - box.top
+		};
+	}
 }
 
 
@@ -164,7 +324,8 @@ proto.destroy = function () {
 
 
 proto._setTrigger = function () {
-	var o = this.o;
+	var o = this.o,
+		that = this;
 
 	if(o.trigger) {
 		var showEvent = '',
@@ -175,7 +336,7 @@ proto._setTrigger = function () {
 			o.$elem.on('click.njp', function (e) {
 						e.preventDefault();
 
-						if(this.njPopover._o.shown) {
+						if(this.njPopover._o.status === 'shown') {
 							this.njPopover.hide();
 							return;
 						}
@@ -196,7 +357,6 @@ proto._setTrigger = function () {
 		case 'follow':
 			o.$elem.on('mouseenter.njp', function (e) {
 						this.njPopover.show();
-
 						$(document).off('mousemove.njp').on('mousemove.njp', function (e) {
 							that.setPosition(e);
 						})
@@ -251,8 +411,8 @@ proto._gatherData = function (first) {//first - only first, initial data gather
 			dataMeta[shortNameLowerCase] = checkval(dataO[p]);
 		}
 	}
-	function checkval(val) {
-		//make boolean from string
+
+	function checkval(val) {//make boolean from string
 		if(val === 'true') {
 			return true;
 		} else if(val === 'false') {
@@ -267,6 +427,7 @@ proto._gatherData = function (first) {//first - only first, initial data gather
 		delete dataMeta.trigger;
 		delete dataMeta.attr;
 	}
+
 	//we can't redefine elem in any case
 	delete dataMeta.elem;
 
@@ -287,28 +448,35 @@ proto._gatherData = function (first) {//first - only first, initial data gather
  		}
 	}
 
+
+
 	$.extend(true, o, dataMeta);
 }
 
 
 
 njPopover.defaults = {
-	container: 'body',//(selector) appends the popover to a specific element
-	viewport: 'document',//(selector || false) keeps the popover within the bounds of this element
+	elem: '',//(selector || dom\jQuery element) dom element for triggering popover
+
+	trigger: 'hover',//(false || click || hover || focus || follow) how popover is triggered. false - manual triggering
+	out: true,//(boolean) click outside popover will close it
+	margin: 5,//(number) margin from element
+
 
 	template:'<div class="njPopover" data-njPopover></div>',//(string) base HTML to use when creating the popover
 	attr: 'title',//get content for popover from this attribute
 	type: 'text',//(text || html || selector) type of content, if selector used, whole element will be inserted in tooltip
 	content: '',//(string || function) content for popover
 
-	waitImg: true,//if we have img in popover with [data-njp-img="true"], wait until img begin downloading(to know it's size), only than show tooltip
-	
-	trigger: 'hover',//(false || click || hover || focus || follow) how popover is triggered. false - manual triggering
-	out: true,//(boolean) click outside popover will close it
-	margin: 5,//(number) margin from element
 
-	placement: 'top',//(top || bottom || left || right) how to position the popover
-	auto: true//(boolean) this option dynamically reorient the popover. For example, if placement is "left", the popover will display to the left when possible, otherwise it will display right.
+
+	container: 'body',//(selector) appends the popover to a specific element
+	viewport: 'document',//(selector || false) keeps the popover within the bounds of this element
+	placement: 'bottom',//(top || bottom || left || right) how to position the popover
+	auto: true,//(boolean) this option dynamically reorient the popover. For example, if placement is "left", the popover will display to the left when possible, otherwise it will display right.
+
+
+	waitImg: true//if we have img in popover with [data-njp-img="true"], wait until img begin downloading(to know it's size), only than show tooltip
 }
 
 })(window, document);
