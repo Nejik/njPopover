@@ -72,6 +72,9 @@ proto.show = function () {
 	this.v.popover[0].njPopover = this;
 
 	(o.viewport && o.viewport === 'document') ? this.v.viewport = $(document) : this.v.viewport = $(o.viewport);
+	// if(!this.v.viewport.length) this.v.viewport = $(document);
+
+	
 
 	//find element where we should set content
 	(this.v.popover.is('[data-njPopover]')) 
@@ -138,21 +141,18 @@ proto.hide = function () {
 }
 
 proto.setPosition = function (e) {
-	// this.v.popover.css({'position': 'absolute',
-	// 					'left':0+'px',
-	//                    'top':0+'px'})
-
-
 	var o = this.o,
 		that = this,
 		eC = this._o.elemCoords = getCoords(o.elem),//trigger element coordinates
-		tC = this._o.tooltipCoords = getCoords(this.v.popover[0]),//popover coordinates(coordinates now fake, from this var we need outerWidth/outerHeight)
-		vC = this._o.viewportCoords = getCoords(this.v.viewport[0]);//viewport coordinates
+		tC = this._o.tooltipCoords = getCoords(this.v.popover[0]);//popover coordinates(coordinates now fake, from this var we need outerWidth/outerHeight)
 
-	// console.log(vC)
+	if(o.viewport && this.v.viewport.length) {
+		var vC = this._o.viewportCoords = getCoords(this.v.viewport[0]);//viewport coordinates
+	}
+
 	if(o.trigger === 'follow') {
 		if(e) {
-			// this.v.popover.css({'left':e.pageX + o.margin +'px',"top":e.pageY + o.margin +'px'})
+			this.v.popover.css({'left':e.pageX + o.margin +'px',"top":e.pageY + o.margin +'px'})
 		}
 	} else {
 		findCoords.call(this, o.placement);
@@ -279,26 +279,28 @@ proto.setPosition = function (e) {
 				width: width,
 				height: height
 			}
+		} else if(elem) {
+			var box = elem.getBoundingClientRect();
+			
+			var body = document.body,
+				docEl = document.documentElement,
+
+				scrollTop = window.pageYOffset || docEl.scrollTop || body.scrollTop,
+				scrollLeft = window.pageXOffset || docEl.scrollLeft || body.scrollLeft,
+				clientTop = docEl.clientTop || body.clientTop || 0,
+				clientLeft = docEl.clientLeft || body.clientLeft || 0;
+
+			return { 
+				top: box.top + scrollTop - clientTop,
+				left: box.left + scrollLeft - clientLeft,
+
+				right: box.right + scrollLeft - clientLeft,
+				bottom: box.bottom + scrollTop - clientTop,
+				width: box.right - box.left,
+				height: box.bottom - box.top
+			};
 		}
-		var box = elem.getBoundingClientRect();
 		
-		var body = document.body,
-			docEl = document.documentElement,
-
-			scrollTop = window.pageYOffset || docEl.scrollTop || body.scrollTop,
-			scrollLeft = window.pageXOffset || docEl.scrollLeft || body.scrollLeft,
-			clientTop = docEl.clientTop || body.clientTop || 0,
-			clientLeft = docEl.clientLeft || body.clientLeft || 0;
-
-		return { 
-			top: box.top + scrollTop - clientTop,
-			left: box.left + scrollLeft - clientLeft,
-
-			right: box.right + scrollLeft - clientLeft,
-			bottom: box.bottom + scrollTop - clientTop,
-			width: box.right - box.left,
-			height: box.bottom - box.top
-		};
 	}
 }
 
