@@ -112,7 +112,6 @@ proto.show = function () {
 		this._o.out = +new Date();
 
 		$(document).on('click.njp.njp_out_'+this._o.out, function (e) {
-			console.log('out')
 			var $el = $(e.target);
 
 			if($el[0] !== o.elem && !$el.closest('.njPopover').length) {
@@ -405,6 +404,8 @@ proto._gatherData = function (first) {//first - only first, initial data gather
 			return val;
 		}
 	}
+	//transform string with number to number type
+	if(dataMeta.margin) dataMeta.margin = parseInt(dataMeta.margin);
 
 	//properties we can't redefine
 	if(!first) {
@@ -433,6 +434,8 @@ proto._gatherData = function (first) {//first - only first, initial data gather
  			o.content = attrContent;
  		}
 	}
+
+
 
 
 
