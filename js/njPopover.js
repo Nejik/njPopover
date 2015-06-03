@@ -35,7 +35,7 @@ proto._init = function (opts) {
 	var o = this.o = $.extend(true, {}, njPopover.defaults, opts),
 		that = this;
 
-	this._o = {};//inner options
+	this._o = {'coords':{}};//inner options
 
 	this.v = {};//object with cached variables
 
@@ -43,6 +43,7 @@ proto._init = function (opts) {
 	o.elem = $(o.elem)[0];//for case if we get jquery object in o.elem
 
 	this._gatherData(true);
+
 
 	if(o.elem.njPopover) return;//we can't initialize 2 times
 
@@ -63,6 +64,7 @@ proto.show = function () {
 			that = this;
 
 	this._gatherData();//update our settings
+
 
 	if(typeof o.content === 'function') o.content = o.content.call(this);
 	if(!o.content) return;//don't show popover, if we have no content for popover
@@ -106,16 +108,18 @@ proto.show = function () {
 
 	this._o.status = 'shown';
 
-	//todo
-	// if(o.out) {
-	// 	$(document).on('click.njp.njp_out', function (e) {
-	// 		var $el = $(e.target);
+	if(o.out) {
+		this._o.out = +new Date();
 
-	// 		if($el[0] !== o.elem && !$el.closest('.njPopover').length) {
-	// 			that.hide();
-	// 		}
-	// 	})
-	// }
+		$(document).on('click.njp.njp_out_'+this._o.out, function (e) {
+			console.log('out')
+			var $el = $(e.target);
+
+			if($el[0] !== o.elem && !$el.closest('.njPopover').length) {
+				that.hide();
+			}
+		})
+	}
 }
 
 
@@ -127,22 +131,23 @@ proto.hide = function () {
 	delete this.v.popover;
 	// this.o.content = null;??зачем это было - хз
 
-	//todo
-	// $(document).off('click.njp_out');
+	$(document).off('click.njp_out_'+this._o.out);
+	delete this._o.out;
+
 	this._o.status = 'hide';//toDO - make hidden status
 }
 
 proto.setPosition = function (e) {
 	var o = this.o,
 		that = this,
-		eC = this._o.elemCoords = getCoords(o.elem),//trigger element coordinates
-		tC = this._o.tooltipCoords = getCoords(this.v.popover[0]),//popover coordinates(coordinates now fake, from this var we need outerWidth/outerHeight)
+		eC = this._o.coords.elemCoords = getCoords(o.elem),//trigger element coordinates
+		tC = this._o.coords.tooltipCoords = getCoords(this.v.popover[0]),//popover coordinates(coordinates now fake, from this var we need outerWidth/outerHeight)
 
 		left,
 		top;
 
 	if(o.viewport && this.v.viewport.length) {
-		var vC = this._o.viewportCoords = getCoords(this.v.viewport[0]);//viewport coordinates
+		var vC = this._o.coords.viewportCoords = getCoords(this.v.viewport[0]);//viewport coordinates
 	}
 
 
@@ -222,7 +227,10 @@ proto.setPosition = function (e) {
 		if(top > maxTop) top = maxTop;
 	}
 
-	this.v.popover.css({'left':left+'px',"top":top+'px'})
+	this.v.popover.css({'left':left+'px',"top":top+'px'});
+
+	//remember proper coordinates
+	this._o.coords.tooltipCoords = getCoords(this.v.popover[0]);
 
 	function getCoords(elem) {
 		if(elem === document) {
@@ -412,7 +420,9 @@ proto._gatherData = function (first) {//first - only first, initial data gather
  		var attrContent;
 
  		if(o.attr === 'title') {
- 			this._o.origTitle = el.attr('title');
+ 			// if(!this._o.origTitle)
+ 			if(el.attr('title')) this._o.origTitle = el.attr('title');
+ 			
  			o.elem.removeAttribute('title');
  			attrContent = this._o.origTitle;
  		} else {
