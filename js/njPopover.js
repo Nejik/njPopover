@@ -72,9 +72,6 @@ proto.show = function () {
 	this.v.popover[0].njPopover = this;
 
 	(o.viewport && o.viewport === 'document') ? this.v.viewport = $(document) : this.v.viewport = $(o.viewport);
-	// if(!this.v.viewport.length) this.v.viewport = $(document);
-
-	
 
 	//find element where we should set content
 	(this.v.popover.is('[data-njPopover]')) 
@@ -104,16 +101,11 @@ proto.show = function () {
 
 	this._o.status = 'inserting';
 
-	this._insertPopover();
-}
-
-proto._insertPopover = function () {
-	var o = this.o;
-
 	this.v.container.append(this.v.popover);
 	this.setPosition();
 
 	this._o.status = 'shown';
+
 	//todo
 	// if(o.out) {
 	// 	$(document).on('click.njp.njp_out', function (e) {
@@ -154,16 +146,16 @@ proto.setPosition = function (e) {
 	}
 
 
-
 	if(o.trigger === 'follow') {
 		if(e) {
-			// this.v.popover.css({'left':e.pageX + o.margin +'px',"top":e.pageY + o.margin +'px'})
 			left = e.pageX + o.margin;
 			top = e.pageY + o.margin;
 		}
 	} else {
 		findCoords.call(this, o.placement);
 	}
+
+
 
 	function findCoords(placement, reorient) {//reorinet -  flag needed to prevent endless recursion if both placements wrong
 		switch(placement) {
@@ -175,8 +167,6 @@ proto.setPosition = function (e) {
 		case 'top':
 			left = eC.left + (eC.width - tC.width)/2^0;//^0 - round
 			top = eC.top - tC.height - o.margin;
-
-
 		break;
 		case 'left':
 			left = eC.left - o.margin - tC.width;
@@ -189,55 +179,36 @@ proto.setPosition = function (e) {
 		}
 
 		
-		
+		//reorient position if no space for popover for this placement
+		if(o.auto && !reorient) {
+			var docCoords;
+			if(this.v.viewport && this.v.viewport.length) {
+				docCoords = vC;
+			} else {
+				docCoords = getCoords(document);
+			}
 
-		//reorient position if no space
-		if(o.auto) {
-			
+			if(placement === 'top' && top < docCoords.top) {
+				findCoords.call(this, 'bottom', true);
+				return;
+			}
+			if(placement === 'bottom' && top > docCoords.bottom) {
+				findCoords.call(this, 'top', true);
+				return;
+			}
+			if(placement === 'left' && left < docCoords.left) {
+				findCoords.call(this, 'right', true);
+				return;
+			}
+			if(placement === 'right' && left > docCoords.right) {
+				findCoords.call(this, 'left', true);
+				return;
+			}
 		}
-
-
-		
-
-		
-
-		// //reorient popover
-		// if(o.auto && !stop) {//stop - flag to prevent infinite change position
-		// 	if(placement === 'left' && left < 0) {
-		// 		findCoords.call(this, 'right', 'stop');
-		// 		return;
-		// 	}
-		// 	if(placement === 'right' && left > document.documentElement.clientWidth - tC.width) {
-		// 		findCoords.call(this, 'left', 'stop');
-		// 		return;
-		// 	}
-		// 	if(placement === 'top' && top < 0) {
-		// 		findCoords.call(this, 'bottom', 'stop');
-		// 		return;
-		// 	}
-		// 	if(placement === 'bottom' && top > document.body.scrollHeight - tC.height) {
-		// 		findCoords.call(this, 'top', 'stop');
-		// 		return;
-		// 	}
-		// }
-
-		// //take popover in document
-		// if(o.inDocument) {
-		// 	// if(placement === 'bottom' || placement === 'top') {
-		// 		if(left < 0) left = 0;
-		// 		var maxLeft = document.documentElement.clientWidth - tC.width;
-		// 		if(left > maxLeft) left = maxLeft;
-
-		// 	// } else if(placement === 'left' || placement === 'right') {
-		// 		if(top < 0) top = 0;
-		// 		var maxTop = document.body.scrollHeight - tC.height;
-		// 		if(top > maxTop) top = maxTop;
-		// 	// }
-		// }
 	}
 
 
-	//fix position for viewport
+	//fix position with viewport option
 	if(this.v.viewport.length) {
 		var minLeft = vC.left,
 			maxLeft = vC.right - tC.width,
@@ -252,18 +223,6 @@ proto.setPosition = function (e) {
 	}
 
 	this.v.popover.css({'left':left+'px',"top":top+'px'})
-	
-
-
-
-
-
-
-
-
-
-
-
 
 	function getCoords(elem) {
 		if(elem === document) {
@@ -303,7 +262,6 @@ proto.setPosition = function (e) {
 				height: box.bottom - box.top
 			};
 		}
-		
 	}
 }
 
@@ -350,15 +308,6 @@ proto._setTrigger = function () {
 					})
 
 		break;
-		case 'hover':
-			showEvent = 'mouseenter.njp'
-			hideEvent = 'mouseleave.njp'
-		break;
-		
-		case 'focus':
-			showEvent = 'focus.njp'
-			hideEvent = 'blur.njp'
-		break;
 		case 'follow':
 			o.$elem.on('mouseenter.njp', function (e) {
 						this.njPopover.show();
@@ -381,6 +330,18 @@ proto._setTrigger = function () {
 				$(document).off('mousemove.njp');
 			})
 		break;
+
+
+		case 'hover':
+			showEvent = 'mouseenter.njp'
+			hideEvent = 'mouseleave.njp'
+		break;
+		
+		case 'focus':
+			showEvent = 'focus.njp'
+			hideEvent = 'blur.njp'
+		break;
+		
 		}
 
 		if(showEvent) {
@@ -473,7 +434,7 @@ proto._gatherData = function (first) {//first - only first, initial data gather
 njPopover.defaults = {
 	elem: '',//(selector || dom\jQuery element) dom element for triggering popover
 
-	trigger: 'hover',//(false || click || hover || focus || follow) how popover is triggered. false - manual triggering
+	trigger: 'click',//(false || click || hover || focus || follow) how popover is triggered. false - manual triggering
 	out: true,//(boolean) click outside popover will close it
 	margin: 5,//(number) margin from element
 
@@ -487,7 +448,7 @@ njPopover.defaults = {
 
 	container: 'body',//(selector) appends the popover to a specific element
 	viewport: 'document',//(selector || false) keeps the popover within the bounds of this element
-	placement: 'bottom',//(top || bottom || left || right) how to position the popover
+	placement: 'top',//(top || bottom || left || right) how to position the popover
 	auto: true,//(boolean) this option dynamically reorient the popover. For example, if placement is "left", the popover will display to the left when possible, otherwise it will display right.
 
 
