@@ -144,30 +144,28 @@ proto.setPosition = function (e) {
 	var o = this.o,
 		that = this,
 		eC = this._o.elemCoords = getCoords(o.elem),//trigger element coordinates
-		tC = this._o.tooltipCoords = getCoords(this.v.popover[0]);//popover coordinates(coordinates now fake, from this var we need outerWidth/outerHeight)
+		tC = this._o.tooltipCoords = getCoords(this.v.popover[0]),//popover coordinates(coordinates now fake, from this var we need outerWidth/outerHeight)
 
-	var left,
-		top,
+		left,
+		top;
 
 	if(o.viewport && this.v.viewport.length) {
 		var vC = this._o.viewportCoords = getCoords(this.v.viewport[0]);//viewport coordinates
 	}
 
+
+
 	if(o.trigger === 'follow') {
 		if(e) {
-			this.v.popover.css({'left':e.pageX + o.margin +'px',"top":e.pageY + o.margin +'px'})
+			// this.v.popover.css({'left':e.pageX + o.margin +'px',"top":e.pageY + o.margin +'px'})
+			left = e.pageX + o.margin;
+			top = e.pageY + o.margin;
 		}
 	} else {
 		findCoords.call(this, o.placement);
 	}
 
-	function findCoords(placement, reorient) {//stop flag needed to prevent endless recursion if both placements wrong
-		var minLeft,
-			maxLeft,
-			minTop,
-			maxTop;
-
-
+	function findCoords(placement, reorient) {//reorinet -  flag needed to prevent endless recursion if both placements wrong
 		switch(placement) {
 		case 'bottom':
 			left = eC.left + (eC.width - tC.width)/2^0;//^0 - round
@@ -190,20 +188,8 @@ proto.setPosition = function (e) {
 		break;
 		}
 
-		//fix position for viewport
-		if(this.v.viewport.length) {
-			minLeft = vC.left;
-			maxLeft = vC.right - tC.width;
-			minTop = vC.top;
-			maxTop = vC.bottom - tC.height;
-
-
-			if(left < minLeft) left = minLeft;
-			if(left > maxLeft) left = maxLeft;
-			
-			if(top < minTop) top = minTop;
-			if(top > maxTop) top = maxTop;
-		}
+		
+		
 
 		//reorient position if no space
 		if(o.auto) {
@@ -250,6 +236,21 @@ proto.setPosition = function (e) {
 		// }
 	}
 
+
+	//fix position for viewport
+	if(this.v.viewport.length) {
+		var minLeft = vC.left,
+			maxLeft = vC.right - tC.width,
+			minTop = vC.top,
+			maxTop = vC.bottom - tC.height;
+
+		if(left < minLeft) left = minLeft;
+		if(left > maxLeft) left = maxLeft;
+		
+		if(top < minTop) top = minTop;
+		if(top > maxTop) top = maxTop;
+	}
+
 	this.v.popover.css({'left':left+'px',"top":top+'px'})
 	
 
@@ -271,6 +272,7 @@ proto.setPosition = function (e) {
 				width = document.body.scrollWidth,
 				height = Math.max( body.scrollHeight, body.offsetHeight, 
                        html.clientHeight, html.scrollHeight, html.offsetHeight);
+
 			return {
 				top:0,
 				left:0,
@@ -365,6 +367,16 @@ proto._setTrigger = function () {
 						})
 					})
 			.on('mouseleave.njp', function (e) {
+				var that = this;
+					//if our popover loacated above trigger element, don't hide popover
+					if($(e.relatedTarget).closest('.njPopover').length) {
+						$(e.relatedTarget).closest('.njPopover').on('mouseleave.njp', function () {
+							that.njPopover.hide();
+							$(document).off('mousemove.njp');
+						})
+						return;
+					}
+
 				this.njPopover.hide();
 				$(document).off('mousemove.njp');
 			})
@@ -383,7 +395,7 @@ proto._setTrigger = function () {
 			o.$elem.on(hideEvent, function (e) {
 				var that = this;
 				if(o.trigger === 'hover') {
-					//if out popover loacated above trigger element, don't hide popover
+					//if our popover loacated above trigger element, don't hide popover
 					if($(e.relatedTarget).closest('.njPopover').length) {
 						$(e.relatedTarget).closest('.njPopover').on(hideEvent, function () {
 							that.njPopover.hide();
