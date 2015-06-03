@@ -11,7 +11,20 @@ if(!$) {
 	throw new Error('njPopover requires jQuery or "j" library (https://github.com/Nejik/j)');
 	return false;
 }
-
+//insert styles to page
++function () {
+	var style = document.createElement('style');
+	style.type = 'text/css';
+	style.innerHTML = '.njPopover {\
+									position:absolute;\
+									z-index:10000;\
+									padding: 5px 10px;\
+									border-radius: 4px;\
+									text-align: center;\
+									background: #fff;\
+									box-shadow: 0px 0px 8px 1px rgba(0,0,0,.3);}';
+	document.getElementsByTagName('head')[0].appendChild(style);
+}();
 //constructor
 window.njPopover = function(opts) {
 	opts = opts || {};
@@ -65,6 +78,17 @@ proto.show = function () {
 
 	this._gatherData();//update our settings
 
+	if(o.out) {
+		this._o.out = +new Date();
+
+		$(document).on('click.njp.njp_out_'+this._o.out, function (e) {
+			var $el = $(e.target);
+
+			if($el[0] !== o.elem && !$el.closest('.njPopover').length) {
+				that.hide();
+			}
+		})
+	}
 
 	if(typeof o.content === 'function') o.content = o.content.call(this);
 	if(!o.content) return;//don't show popover, if we have no content for popover
@@ -101,30 +125,42 @@ proto.show = function () {
 	//toDo waitImg
 
 
-	this._o.status = 'inserting';
+	
 
 	this.v.container.append(this.v.popover);
+
 	this.setPosition();
 
-	this._o.status = 'shown';
+	this._cb_show();//callback show
+	
+	//тут анимашка открытия
+	// this.v.popover.css({'visibility':'visible'});
 
-	if(o.out) {
-		this._o.out = +new Date();
 
-		$(document).on('click.njp.njp_out_'+this._o.out, function (e) {
-			var $el = $(e.target);
+	this.v.popover.addClass('njp-show-'+this.o.animShow);
+	// this.v.popover[0].clientHeight;//force relayout
+	window.getComputedStyle(this.v.popover[0]).opacity;
 
-			if($el[0] !== o.elem && !$el.closest('.njPopover').length) {
-				that.hide();
-			}
-		})
-	}
+	setTimeout(function(){
+		that.v.popover.addClass('njp-shown-'+that.o.animShow);
+		
+	}, 100)
+
+
+	this._cb_shown();//callback show
+
+	
 }
 
 
 proto.hide = function () {
-	if(this._o.status !== 'shown') return;
+	// if(this._o.status !== 'shown') return;
 	var o = this.o;
+	this._cb_hide();
+	//анимашка скрытия
+	this._cb_hidden();
+
+
 	this.v.popover.remove();
 
 	delete this.v.popover;
@@ -133,7 +169,7 @@ proto.hide = function () {
 	$(document).off('click.njp_out_'+this._o.out);
 	delete this._o.out;
 
-	this._o.status = 'hide';//toDO - make hidden status
+	
 }
 
 proto.setPosition = function (e) {
@@ -274,9 +310,10 @@ proto.setPosition = function (e) {
 
 
 proto.destroy = function () {
-	if(!o.elem.njPopover) return;//nothing to destroy, plugin not initialized
-
 	var o = this.o;
+
+	if(!o.elem.njPopover) return;//nothing to destroy, plugin not initialized
+	this.v.tabs.trigger('njt_destroy', [this]);
 
 	this.hide();
 
@@ -285,8 +322,9 @@ proto.destroy = function () {
 	$(document).off('.njp');
 
 	//restore attribute for element
-	if(this._o.origTitle) {//вернуть аттрибут на место
-		o.elem.setAttribute('title', this._o.origTitle)
+	if(this._o.origTitle) {
+		o.elem.setAttribute('title', this._o.origTitle);
+		delete this._o.origTitle;
 	}
 
 	delete o.elem.njPopover;
@@ -435,12 +473,90 @@ proto._gatherData = function (first) {//first - only first, initial data gather
  		}
 	}
 
-
-
-
+	if(dataMeta.anim) {
+		var tmp = dataMeta.anim.split(' ');
+		dataMeta.animShow = tmp[0];
+		(tmp[1]) ? dataMeta.animHide = tmp[1] : dataMeta.animHide = tmp[0];
+	}
 
 	$.extend(true, o, dataMeta);
 }
+
+proto._getMaxTransitionDuration = function (el) {
+	var el = $(el),
+	    str,
+	    arr;
+
+	if(!$(el).length) return 0;
+
+	str = el.css('transitionDuration');
+
+	if (!str || str == undefined) str = '0s';
+	
+	arr = str.replace(/s/gi,'').split(', ');
+
+	return Math.max.apply(Math, arr)*1000;
+}
+
+
+
+
+
+
+
+
+
+proto._cb_show = function () {//cb - callback
+	this._o.status = 'show';
+	
+	var o = this.o;
+	if(o.$elem.length) o.$elem.trigger('njp_show', [this]);
+	console.log('show')
+}
+proto._cb_shown = function () {
+	this._o.status = 'shown';
+
+	var o = this.o;
+
+	if(o.$elem.length) o.$elem.trigger('njp_shown', [this]);
+	console.log('shown')
+}
+proto._cb_hide = function () {
+	this._o.status = 'hide';
+
+	var o = this.o;
+
+	if(o.$elem.length) o.$elem.trigger('njp_hide', [this]);
+	console.log('hide')
+}
+proto._cb_hidden = function () {
+	this._o.status = 'hidden';
+
+	var o = this.o;
+	
+	if(o.$elem.length) o.$elem.trigger('njp_hidden', [this]);
+	console.log('hidden')
+}
+proto._cb_destroy = function () {
+	var o = this.o;
+	
+	if(o.$elem.length) o.$elem.trigger('njp_destroy', [this]);
+	console.log('destroy')
+}
+proto._cb_destroyed = function () {
+	this._o.status = 'destroyed';
+
+	var o = this.o;
+	
+	if(o.$elem.length) o.$elem.trigger('njp_destroyed', [this]);
+	console.log('destroyed')
+}
+
+
+
+
+
+
 
 
 
@@ -464,8 +580,8 @@ njPopover.defaults = {
 	placement: 'top',//(top || bottom || left || right) how to position the popover
 	auto: true,//(boolean) this option dynamically reorient the popover. For example, if placement is "left", the popover will display to the left when possible, otherwise it will display right.
 
-
-	waitImg: true//if we have img in popover with [data-njp-img="true"], wait until img begin downloading(to know it's size), only than show tooltip
+	anim: false,//(false || string) name of animation (see animation section)
+	// waitImg: true//if we have img in popover with [data-njp-img="true"], wait until img begin downloading(to know it's size), only than show tooltip
 }
 
 })(window, document);
