@@ -11,21 +11,6 @@ if(!$) {
 	throw new Error('njPopover requires jQuery or "j" library (https://github.com/Nejik/j)');
 	return false;
 }
-//insert styles to page
-// +function () {
-// 	var style = document.createElement('style');
-// 	style.type = 'text/css';
-// 	style.innerHTML = '.njPopover {\
-// 									position:absolute;\
-// 									opacity:0;\
-// 									z-index:10000;\
-// 									padding: 5px 10px;\
-// 									border-radius: 4px;\
-// 									text-align: center;\
-// 									background: #fff;\
-// 									box-shadow: 0px 0px 8px 1px rgba(0,0,0,.3);}';
-// 	document.getElementsByTagName('head')[0].appendChild(style);
-// }();
 //constructor
 window.njPopover = function(opts) {
 	opts = opts || {};
@@ -57,18 +42,14 @@ proto._init = function (opts) {
 	o.$elem = $(o.elem);
 	o.elem = $(o.elem)[0];//for case if we get jquery object in o.elem
 
-
-
 	if(o.elem) {
 		if(o.elem.njPopover) return;//we can't initialize 2 times
 		this._gatherData(true);
 	} else {
-		o.trigger = false;
+		o.trigger = false;//if we have no element, we should use manually show/hide
 	}
-	
 
 	this._setTrigger();
-
 
 	this._o.status = 'inited';
 	if(o.elem) o.elem.njPopover = this;
@@ -85,13 +66,36 @@ proto.show = function () {
 
 	if(o.elem) {
 		this._gatherData();//update our settings
+	} else {
+		if(o.anim) {
+			var tmp = o.anim.split(' ');
+			o.animShow = tmp[0];
+			(tmp[1]) ? o.animHide = tmp[1] : o.animHide = tmp[0];
+		}
+	}
 
-		if(o.out) {
-			this._o.out = +new Date();
 
-			$(document).on('click.njp.njp_out_'+this._o.out, function (e) {
-				var $el = $(e.target);
+	
+	if(typeof o.content === 'function') o.content = o.content.call(this);
+	if(!o.content) return;//don't show popover, if we have no content for popover
 
+	if(!o.elem && !o.coords) return;//don't show popover if we have no coords for showing
+
+
+	this.v.container = $(o.container);
+	if(!this.v.container.length) return;//don't do anything, if we have no container
+
+	this.v.wrap = $(o.template);
+	this.v.wrap[0].njPopover = this;
+	(o.viewport === 'document') ? this.v.viewport = $(document) : this.v.viewport = $(o.viewport);
+
+	if(o.out) {
+		this._o.out = +new Date();
+
+		$(document).on('click.njp.njp_out_'+this._o.out, function (e) {
+			var $el = $(e.target);
+
+			if(o.elem) {
 				if(o.out === 'self') {
 					if($el[0] !== o.elem && !$el.closest('.njp-wrap').length) {
 						that.hide();
@@ -101,35 +105,23 @@ proto.show = function () {
 						that.hide();
 					}
 				}
+			} else {
+				if(o.out === 'self') {
+					if(!$el.closest('.njp-wrap').length) {
+						that.hide();
+					}
+				} else {
+					that.hide();
+				}
+			}
+			
 
-				
-			})
-		}
-	} else {
-		if(o.anim) {
-			var tmp = o.anim.split(' ');
-			o.animShow = tmp[0];
-			(tmp[1]) ? o.animHide = tmp[1] : o.animHide = tmp[0];
-		}
+			
+		})
 	}
 
-	
-	if(typeof o.content === 'function') o.content = o.content.call(this);
-	if(!o.content) return;//don't show popover, if we have no content for popover
-
-	if(!o.elem && !o.coords) return;//don't show popover if we have no coords for showing, or content
-
-
-	this.v.container = $(o.container);
-	this.v.wrap = $(o.template);
-	this.v.wrap[0].njPopover = this;
-
-	(o.viewport && o.viewport === 'document') ? this.v.viewport = $(document) : this.v.viewport = $(o.viewport);
 
 	//find element where we should set content
-	// (this.v.wrap.is('.njp')) 
-	// 										? this.v.popover = this.v.wrap
-	// 										: this.v.popover = this.v.wrap.find('.njp');
 	this.v.popover = this.v.wrap.find('.njp')
 
 	
@@ -145,6 +137,8 @@ proto.show = function () {
 		if(content.length) {
 			this.v.popover.append(content);
 			return;
+		} else {
+			return;
 		}
 	break;
 	}
@@ -156,15 +150,16 @@ proto.show = function () {
 	that.setPosition();
 
 	this._cb_show();//callback show
+
 	if(o.animShow) {
 		//i don't know why, but elem.getBoundingClientRect used on elem stops any future transitions, thats why after position, we remove and insert elem again...
 		// this.v.wrap.remove();
 		// this.v.container.append(this.v.wrap);
 
 		//i don't know why, but elem.getBoundingClientRect used on elem stops any future transitions, thats why after position, we hides and show elem again
-		this.v.popover.css('display','none')
+		this.v.popover.css('display','none');
 		this.v.popover[0].clientHeight;//force relayout
-		this.v.popover.css('display','block')
+		this.v.popover.css('display','block');
 
 
 		this.v.popover.addClass('njp-show-'+this.o.animShow);
@@ -227,6 +222,7 @@ proto.setPosition = function (e) {
 		this._cb_positioned();
 		return;
 	}
+
 
 	var eC = this._o.coords.elemCoords = getCoords(o.elem),//trigger element coordinates
 		tC = this._o.coords.tooltipCoords = getCoords(this.v.wrap[0]),//popover coordinates(coordinates now fake, from this var we need outerWidth/outerHeight)
@@ -366,14 +362,14 @@ proto.setPosition = function (e) {
 proto.destroy = function () {
 	var o = this.o;
 
-	if(!o.elem.njPopover) return;//nothing to destroy, plugin not initialized
+	if(o.elem && !o.elem.njPopover) return;//nothing to destroy, plugin not initialized
 
 	this._cb_destroy();
 
 	this.hide();
 
 	//remove all handlers
-	o.$elem.off('.njp');
+	if(o.elem) o.$elem.off('.njp');
 	$(document).off('.njp');
 
 	//restore attribute for element
@@ -506,7 +502,7 @@ proto._gatherData = function (first) {//first - only first, initial data gather
 		delete dataMeta.attr;
 	}
 
-	//we can't redefine elem in any case
+	//we can't define elem from data option
 	delete dataMeta.elem;
 
 
@@ -523,9 +519,7 @@ proto._gatherData = function (first) {//first - only first, initial data gather
 			attrContent = el.attr(o.attr)
 		}
 
-		if(attrContent) {
-			o.content = attrContent;
-		}
+		if(attrContent) o.content = attrContent;
 	}
 
 	if(dataMeta.anim) {
