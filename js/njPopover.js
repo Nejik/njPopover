@@ -12,19 +12,20 @@ if(!$) {
 	return false;
 }
 //insert styles to page
-+function () {
-	var style = document.createElement('style');
-	style.type = 'text/css';
-	style.innerHTML = '.njPopover {\
-									position:absolute;\
-									z-index:10000;\
-									padding: 5px 10px;\
-									border-radius: 4px;\
-									text-align: center;\
-									background: #fff;\
-									box-shadow: 0px 0px 8px 1px rgba(0,0,0,.3);}';
-	document.getElementsByTagName('head')[0].appendChild(style);
-}();
+// +function () {
+// 	var style = document.createElement('style');
+// 	style.type = 'text/css';
+// 	style.innerHTML = '.njPopover {\
+// 									position:absolute;\
+// 									opacity:0;\
+// 									z-index:10000;\
+// 									padding: 5px 10px;\
+// 									border-radius: 4px;\
+// 									text-align: center;\
+// 									background: #fff;\
+// 									box-shadow: 0px 0px 8px 1px rgba(0,0,0,.3);}';
+// 	document.getElementsByTagName('head')[0].appendChild(style);
+// }();
 //constructor
 window.njPopover = function(opts) {
 	opts = opts || {};
@@ -68,7 +69,7 @@ proto._init = function (opts) {
 }
 
 proto.show = function () {
-	if(this._o.status === 'shown') return;
+	if(this._o.status !== 'inited' && this._o.status !== 'hidden') return;
 	//todo: заготовка для аякса
 	// if(this._o.shown && opts) {
 	// 	//opts - передавать в arguments
@@ -94,29 +95,29 @@ proto.show = function () {
 	if(!o.content) return;//don't show popover, if we have no content for popover
 
 	this.v.container = $(o.container);
-	this.v.popover = $(o.template);
-	this.v.popover[0].njPopover = this;
+	this.v.wrap = $(o.template);
+	this.v.wrap[0].njPopover = this;
 
 	(o.viewport && o.viewport === 'document') ? this.v.viewport = $(document) : this.v.viewport = $(o.viewport);
 
 	//find element where we should set content
-	(this.v.popover.is('[data-njPopover]')) 
-											? this.v.contentEl = this.v.popover
-											: this.v.contentEl = this.v.popover.find('[data-njPopover]');
-
+	// (this.v.wrap.is('.njp')) 
+	// 										? this.v.popover = this.v.wrap
+	// 										: this.v.popover = this.v.wrap.find('.njp');
+	this.v.popover = this.v.wrap.find('.njp')
 
 	
 	switch(o.type) {
 	case 'text':
-		this.v.contentEl.text(o.content)
+		this.v.popover.text(o.content)
 	break;
 	case 'html':
-		this.v.contentEl.html(o.content)
+		this.v.popover.html(o.content)
 	break;
 	case 'selector':
 		var content = $(o.content);
 		if(content.length) {
-			this.v.contentEl.append(content);
+			this.v.popover.append(content);
 			return;
 		}
 	break;
@@ -124,50 +125,69 @@ proto.show = function () {
 
 	//toDo waitImg
 
+	this.v.container.append(this.v.wrap);
 
-	
-
-	this.v.container.append(this.v.popover);
-
-	this.setPosition();
+	that.setPosition();
 
 	this._cb_show();//callback show
-	
-	//тут анимашка открытия
-	// this.v.popover.css({'visibility':'visible'});
+	if(o.animShow) {
+		//i don't know why, but elem.getBoundingClientRect used on elem stops any future transitions, thats why after position, we remove and insert elem again...
+		// this.v.wrap.remove();
+		// this.v.container.append(this.v.wrap);
+
+		//i don't know why, but elem.getBoundingClientRect used on elem stops any future transitions, thats why after position, we hides and show elem again
+		this.v.popover.css('display','none')
+		this.v.popover[0].clientHeight;//force relayout
+		this.v.popover.css('display','block')
 
 
-	this.v.popover.addClass('njp-show-'+this.o.animShow);
-	// this.v.popover[0].clientHeight;//force relayout
-	window.getComputedStyle(this.v.popover[0]).opacity;
+		this.v.popover.addClass('njp-show-'+this.o.animShow);
+		this.v.popover[0].clientHeight;//force relayout
+		this.v.popover.addClass('njp-shown-'+this.o.animShow);
 
-	setTimeout(function(){
-		that.v.popover.addClass('njp-shown-'+that.o.animShow);
-		
-	}, 100)
+		setTimeout(function(){
+			that.v.popover.removeClass('njp-show-'+that.o.animShow + ' '+ 'njp-shown-'+that.o.animShow);
 
-
-	this._cb_shown();//callback show
-
-	
+			that._cb_shown();
+		}, that._getMaxTransitionDuration(this.v.popover[0]))
+	} else {
+		that._cb_shown();
+	}
 }
 
 
 proto.hide = function () {
-	// if(this._o.status !== 'shown') return;
-	var o = this.o;
+	if(this._o.status !== 'shown') return;
+	var o = this.o,
+		that = this;
+
 	this._cb_hide();
-	//анимашка скрытия
-	this._cb_hidden();
 
+	if(o.animHide) {
+		this.v.popover.addClass('njp-hide-'+this.o.animHide);
+		this.v.popover[0].clientHeight;//force relayout
+		this.v.popover.addClass('njp-hidden-'+this.o.animHide);
 
-	this.v.popover.remove();
+		setTimeout(function(){
+			removePopover();
+			that._cb_hidden();
+		}, that._getMaxTransitionDuration(that.v.popover[0]))
+	} else {
+		removePopover();
+		this._cb_hidden();
+	}
+	
 
-	delete this.v.popover;
-	// this.o.content = null;??зачем это было - хз
+	function removePopover() {
+		that.v.wrap.remove();
 
-	$(document).off('click.njp_out_'+this._o.out);
-	delete this._o.out;
+		// delete that.v.wrap;
+		// that.o.content = null;??зачем это было - хз
+
+		$(document).off('click.njp_out_'+that._o.out);
+		delete that._o.out;
+	}
+	
 
 	
 }
@@ -176,7 +196,7 @@ proto.setPosition = function (e) {
 	var o = this.o,
 		that = this,
 		eC = this._o.coords.elemCoords = getCoords(o.elem),//trigger element coordinates
-		tC = this._o.coords.tooltipCoords = getCoords(this.v.popover[0]),//popover coordinates(coordinates now fake, from this var we need outerWidth/outerHeight)
+		tC = this._o.coords.tooltipCoords = getCoords(this.v.wrap[0]),//popover coordinates(coordinates now fake, from this var we need outerWidth/outerHeight)
 
 		left,
 		top;
@@ -262,10 +282,12 @@ proto.setPosition = function (e) {
 		if(top > maxTop) top = maxTop;
 	}
 
-	this.v.popover.css({'left':left+'px',"top":top+'px'});
+	this.v.wrap.css({'left':left+'px',"top":top+'px'});
 
 	//remember proper coordinates
-	this._o.coords.tooltipCoords = getCoords(this.v.popover[0]);
+	this._o.coords.tooltipCoords = getCoords(this.v.wrap[0]);
+
+	this._cb_positioned();
 
 	function getCoords(elem) {
 		if(elem === document) {
@@ -273,7 +295,7 @@ proto.setPosition = function (e) {
 				html = $('html')[0],
 				width = document.body.scrollWidth,
 				height = Math.max( body.scrollHeight, body.offsetHeight, 
-                       html.clientHeight, html.scrollHeight, html.offsetHeight);
+					   html.clientHeight, html.scrollHeight, html.offsetHeight);
 
 			return {
 				top:0,
@@ -295,7 +317,7 @@ proto.setPosition = function (e) {
 				clientTop = docEl.clientTop || body.clientTop || 0,
 				clientLeft = docEl.clientLeft || body.clientLeft || 0;
 
-			return { 
+			return {
 				top: box.top + scrollTop - clientTop,
 				left: box.left + scrollLeft - clientLeft,
 
@@ -313,7 +335,8 @@ proto.destroy = function () {
 	var o = this.o;
 
 	if(!o.elem.njPopover) return;//nothing to destroy, plugin not initialized
-	this.v.tabs.trigger('njt_destroy', [this]);
+
+	this._cb_destroy();
 
 	this.hide();
 
@@ -328,6 +351,8 @@ proto.destroy = function () {
 	}
 
 	delete o.elem.njPopover;
+
+	this._cb_destroyed();
 }
 
 
@@ -455,22 +480,22 @@ proto._gatherData = function (first) {//first - only first, initial data gather
 	delete dataMeta.elem;
 
 
- 	if(o.attr) {
- 		var attrContent;
+	if(o.attr) {
+		var attrContent;
 
- 		if(o.attr === 'title') {
- 			// if(!this._o.origTitle)
- 			if(el.attr('title')) this._o.origTitle = el.attr('title');
- 			
- 			o.elem.removeAttribute('title');
- 			attrContent = this._o.origTitle;
- 		} else {
- 			attrContent = el.attr(o.attr)
- 		}
+		if(o.attr === 'title') {
+			// if(!this._o.origTitle)
+			if(el.attr('title')) this._o.origTitle = el.attr('title');
+			
+			o.elem.removeAttribute('title');
+			attrContent = this._o.origTitle;
+		} else {
+			attrContent = el.attr(o.attr)
+		}
 
- 		if(attrContent) {
- 			o.content = attrContent;
- 		}
+		if(attrContent) {
+			o.content = attrContent;
+		}
 	}
 
 	if(dataMeta.anim) {
@@ -484,8 +509,8 @@ proto._gatherData = function (first) {//first - only first, initial data gather
 
 proto._getMaxTransitionDuration = function (el) {
 	var el = $(el),
-	    str,
-	    arr;
+		str,
+		arr;
 
 	if(!$(el).length) return 0;
 
@@ -504,52 +529,67 @@ proto._getMaxTransitionDuration = function (el) {
 
 
 
+proto._cb_positioned = function () {
+	var o = this.o;
 
+	$(document).triggerHandler('njp_positioned', [this.v.wrap[0], this]);
+	if(o.$elem.length) o.$elem.triggerHandler('njp_positioned', [this.v.wrap[0], this]);
+	if(o.positioned) o.positioned.call(this, this.v.wrap[0]);
+}
 
 proto._cb_show = function () {//cb - callback
 	this._o.status = 'show';
 	
 	var o = this.o;
-	if(o.$elem.length) o.$elem.trigger('njp_show', [this]);
-	console.log('show')
+
+
+	$(document).trigger('njp_show', [this.v.wrap[0], this]);
+	if(o.$elem.length) o.$elem.triggerHandler('njp_show', [this.v.wrap[0], this]);	
+	if(o.show) o.show.call(this, this.v.wrap[0]);
 }
 proto._cb_shown = function () {
 	this._o.status = 'shown';
 
 	var o = this.o;
 
-	if(o.$elem.length) o.$elem.trigger('njp_shown', [this]);
-	console.log('shown')
+
+	$(document).triggerHandler('njp_shown', [this.v.wrap[0], this]);
+	if(o.$elem.length) o.$elem.triggerHandler('njp_shown', [this.v.wrap[0], this]);	
+	if(o.shown) o.shown.call(this, this.v.wrap[0]);
 }
 proto._cb_hide = function () {
 	this._o.status = 'hide';
 
 	var o = this.o;
 
-	if(o.$elem.length) o.$elem.trigger('njp_hide', [this]);
-	console.log('hide')
+	$(document).triggerHandler('njp_hide', [this.v.wrap[0], this]);
+	if(o.$elem.length) o.$elem.triggerHandler('njp_hide', [this.v.wrap[0], this]);	
+	if(o.hide) o.hide.call(this, this.v.wrap[0]);
 }
 proto._cb_hidden = function () {
 	this._o.status = 'hidden';
 
 	var o = this.o;
 	
-	if(o.$elem.length) o.$elem.trigger('njp_hidden', [this]);
-	console.log('hidden')
+	$(document).triggerHandler('njp_hidden', [this.v.wrap[0], this]);
+	if(o.$elem.length) o.$elem.triggerHandler('njp_hidden', [this.v.wrap[0], this]);	
+	if(o.hidden) o.hidden.call(this, this.v.wrap[0]);
 }
 proto._cb_destroy = function () {
 	var o = this.o;
 	
-	if(o.$elem.length) o.$elem.trigger('njp_destroy', [this]);
-	console.log('destroy')
+	$(document).triggerHandler('njp_destroy', [this.v.wrap[0], this]);
+	if(o.$elem.length) o.$elem.triggerHandler('njp_destroy', [this.v.wrap[0], this]);	
+	if(o.destroy) o.destroy.call(this, this.v.wrap[0]);
 }
 proto._cb_destroyed = function () {
 	this._o.status = 'destroyed';
 
 	var o = this.o;
 	
-	if(o.$elem.length) o.$elem.trigger('njp_destroyed', [this]);
-	console.log('destroyed')
+	$(document).triggerHandler('njp_destroyed', [this.v.wrap[0], this]);
+	if(o.$elem.length) o.$elem.triggerHandler('njp_destroyed', [this.v.wrap[0], this]);	
+	if(o.destroyed) o.destroyed.call(this, this.v.wrap[0]);
 }
 
 
@@ -568,7 +608,7 @@ njPopover.defaults = {
 	margin: 5,//(number) margin from element
 
 
-	template:'<div class="njPopover" data-njPopover></div>',//(string) base HTML to use when creating the popover
+	template:'<div class="njp-wrap"><div class="njp"></div></div>',//(string) base HTML to use when creating the popover
 	attr: 'title',//get content for popover from this attribute
 	type: 'text',//(text || html || selector) type of content, if selector used, whole element will be inserted in tooltip
 	content: '',//(string || function) content for popover
