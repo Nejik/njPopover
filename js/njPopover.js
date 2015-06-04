@@ -49,6 +49,7 @@ proto._init = function (opts) {
 	var o = this.o = $.extend(true, {}, njPopover.defaults, opts),
 		that = this;
 
+	
 	this._o = {'coords':{}};//inner options
 
 	this.v = {};//object with cached variables
@@ -56,16 +57,21 @@ proto._init = function (opts) {
 	o.$elem = $(o.elem);
 	o.elem = $(o.elem)[0];//for case if we get jquery object in o.elem
 
-	this._gatherData(true);
 
 
-	if(o.elem.njPopover) return;//we can't initialize 2 times
+	if(o.elem) {
+		if(o.elem.njPopover) return;//we can't initialize 2 times
+		this._gatherData(true);
+	} else {
+		o.trigger = false;
+	}
+	
 
 	this._setTrigger();
 
 
 	this._o.status = 'inited';
-	o.elem.njPopover = this;
+	if(o.elem) o.elem.njPopover = this;
 }
 
 proto.show = function () {
@@ -77,30 +83,42 @@ proto.show = function () {
 	var o = this.o,
 			that = this;
 
-	this._gatherData();//update our settings
+	if(o.elem) {
+		this._gatherData();//update our settings
 
-	if(o.out) {
-		this._o.out = +new Date();
+		if(o.out) {
+			this._o.out = +new Date();
 
-		$(document).on('click.njp.njp_out_'+this._o.out, function (e) {
-			var $el = $(e.target);
+			$(document).on('click.njp.njp_out_'+this._o.out, function (e) {
+				var $el = $(e.target);
 
-			if(o.out === 'self') {
-				if($el[0] !== o.elem && !$el.closest('.njp-wrap').length) {
-					that.hide();
+				if(o.out === 'self') {
+					if($el[0] !== o.elem && !$el.closest('.njp-wrap').length) {
+						that.hide();
+					}
+				} else {
+					if($el[0] !== o.elem) {
+						that.hide();
+					}
 				}
-			} else {
-				if($el[0] !== o.elem) {
-					that.hide();
-				}
-			}
 
-			
-		})
+				
+			})
+		}
+	} else {
+		if(o.anim) {
+			var tmp = o.anim.split(' ');
+			o.animShow = tmp[0];
+			(tmp[1]) ? o.animHide = tmp[1] : o.animHide = tmp[0];
+		}
 	}
 
+	
 	if(typeof o.content === 'function') o.content = o.content.call(this);
 	if(!o.content) return;//don't show popover, if we have no content for popover
+
+	if(!o.elem && !o.coords) return;//don't show popover if we have no coords for showing, or content
+
 
 	this.v.container = $(o.container);
 	this.v.wrap = $(o.template);
@@ -198,8 +216,19 @@ proto.hide = function () {
 
 proto.setPosition = function (e) {
 	var o = this.o,
-		that = this,
-		eC = this._o.coords.elemCoords = getCoords(o.elem),//trigger element coordinates
+		that = this;
+
+	if(o.coords) {
+		this.v.wrap.css({'left':o.coords[0]+'px',"top":o.coords[1]+'px'});
+
+		//remember proper coordinates
+		this._o.coords.tooltipCoords = getCoords(this.v.wrap[0]);
+
+		this._cb_positioned();
+		return;
+	}
+
+	var eC = this._o.coords.elemCoords = getCoords(o.elem),//trigger element coordinates
 		tC = this._o.coords.tooltipCoords = getCoords(this.v.wrap[0]),//popover coordinates(coordinates now fake, from this var we need outerWidth/outerHeight)
 
 		left,
@@ -443,7 +472,6 @@ proto._setTrigger = function () {
 	}
 }
 
-
 proto._gatherData = function (first) {//first - only first, initial data gather
 	var o = this.o,
 		el = o.$elem,
@@ -544,7 +572,6 @@ proto._cb_show = function () {//cb - callback
 	
 	var o = this.o;
 
-
 	$(document).trigger('njp_show', [this.v.wrap[0], this]);
 	if(o.$elem.length) o.$elem.triggerHandler('njp_show', [this.v.wrap[0], this]);	
 	if(o.show) o.show.call(this, this.v.wrap[0]);
@@ -553,7 +580,6 @@ proto._cb_shown = function () {
 	this._o.status = 'shown';
 
 	var o = this.o;
-
 
 	$(document).triggerHandler('njp_shown', [this.v.wrap[0], this]);
 	if(o.$elem.length) o.$elem.triggerHandler('njp_shown', [this.v.wrap[0], this]);	
@@ -604,6 +630,7 @@ proto._cb_destroyed = function () {
 
 njPopover.defaults = {
 	elem: '',//(selector || dom\jQuery element) dom element for triggering popover
+	// coords: [],//(array with 2 numbers) X/Y coordinates for positioning popover. Used only when call popover without elem.
 
 	trigger: 'click',//(false || click || hover || focus || follow) how popover is triggered. false - manual triggering
 	out: 'self',//(boolean || self) click outside popover will close it
