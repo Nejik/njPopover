@@ -85,9 +85,17 @@ proto.show = function () {
 		$(document).on('click.njp.njp_out_'+this._o.out, function (e) {
 			var $el = $(e.target);
 
-			if($el[0] !== o.elem && !$el.closest('.njPopover').length) {
-				that.hide();
+			if(o.out === 'self') {
+				if($el[0] !== o.elem && !$el.closest('.njp-wrap').length) {
+					that.hide();
+				}
+			} else {
+				if($el[0] !== o.elem) {
+					that.hide();
+				}
 			}
+
+			
 		})
 	}
 
@@ -155,7 +163,6 @@ proto.show = function () {
 	}
 }
 
-
 proto.hide = function () {
 	if(this._o.status !== 'shown') return;
 	var o = this.o,
@@ -187,9 +194,6 @@ proto.hide = function () {
 		$(document).off('click.njp_out_'+that._o.out);
 		delete that._o.out;
 	}
-	
-
-	
 }
 
 proto.setPosition = function (e) {
@@ -330,7 +334,6 @@ proto.setPosition = function (e) {
 	}
 }
 
-
 proto.destroy = function () {
 	var o = this.o;
 
@@ -354,7 +357,6 @@ proto.destroy = function () {
 
 	this._cb_destroyed();
 }
-
 
 proto._setTrigger = function () {
 	var o = this.o,
@@ -604,7 +606,7 @@ njPopover.defaults = {
 	elem: '',//(selector || dom\jQuery element) dom element for triggering popover
 
 	trigger: 'click',//(false || click || hover || focus || follow) how popover is triggered. false - manual triggering
-	out: true,//(boolean) click outside popover will close it
+	out: 'self',//(boolean || self) click outside popover will close it
 	margin: 5,//(number) margin from element
 
 
