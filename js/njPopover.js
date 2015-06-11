@@ -129,9 +129,10 @@ proto.show = function () {
 		this.v.popover.html(o.content)
 	break;
 	case 'selector':
-		var content = $(o.content);
-		if(content.length) {
-			this.v.popover.append(content);
+		if(!this._o.content) this._o.content = $(o.content);
+
+		if(this._o.content.length) {
+			this.v.popover.append(this._o.content);
 		} else {
 			return;
 		}
@@ -194,6 +195,7 @@ proto.hide = function () {
 		this._cb_hidden();
 	}
 	
+	$('body').append(this._o.content);
 
 	function removePopover() {
 		that.v.wrap.remove();
