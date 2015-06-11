@@ -16,7 +16,7 @@ window.njPopover = function(opts) {
 	opts = opts || {};
 
 	if(!(this instanceof njPopover)) {//when we call njPopover not as a contructor, make instance and call it
-		return new njPopover(opts);
+		return new njPopover(opts).show();
 	}
 
 	this._init(opts);
@@ -51,12 +51,10 @@ proto._init = function (opts) {
 
 	this._setTrigger();
 
-	this._o.status = 'inited';
-	if(o.elem) o.elem.njPopover = this;
+	this._cb_inited();
 }
-
 proto.show = function () {
-	if(this._o.status !== 'inited' && this._o.status !== 'hidden') return;
+	if(this._o.state !== 'inited') return;
 	//todo: заготовка для аякса
 	// if(this._o.shown && opts) {
 	// 	//opts - передавать в arguments
@@ -64,20 +62,18 @@ proto.show = function () {
 	var o = this.o,
 			that = this;
 
-	if(o.elem) {
-		this._gatherData();//update our settings
-	} else {
-		if(o.anim) {
-			var tmp = o.anim.split(' ');
-			o.animShow = tmp[0];
-			(tmp[1]) ? o.animHide = tmp[1] : o.animHide = tmp[0];
-		}
+	if(o.elem) this._gatherData();//update our settings
+
+	if(o.anim) {
+		var tmp = o.anim.split(' ');
+		o.animShow = tmp[0];
+		(tmp[1]) ? o.animHide = tmp[1] : o.animHide = tmp[0];
 	}
 
 
-	
 	if(typeof o.content === 'function') o.content = o.content.call(this);
-	if(!o.content) return;//don't show popover, if we have no content for popover
+
+	if(!o.content || (typeof o.content !== 'string' && typeof o.content !== 'number')) return;//don't show popover, if we have no content for popover
 
 	if(!o.elem && !o.coords) return;//don't show popover if we have no coords for showing
 
@@ -124,7 +120,7 @@ proto.show = function () {
 	//find element where we should set content
 	this.v.popover = this.v.wrap.find('.njp')
 
-	
+	//set content
 	switch(o.type) {
 	case 'text':
 		this.v.popover.text(o.content)
@@ -136,7 +132,6 @@ proto.show = function () {
 		var content = $(o.content);
 		if(content.length) {
 			this.v.popover.append(content);
-			return;
 		} else {
 			return;
 		}
@@ -145,22 +140,22 @@ proto.show = function () {
 
 	//toDo waitImg
 
+	if(this._cb_show() === false) return;//callback show
+
 	this.v.container.append(this.v.wrap);
 
 	that.setPosition();
-
-	this._cb_show();//callback show
 
 	if(o.animShow) {
 		//i don't know why, but elem.getBoundingClientRect used on elem stops any future transitions, thats why after position, we remove and insert elem again...
 		// this.v.wrap.remove();
 		// this.v.container.append(this.v.wrap);
 
+
 		//i don't know why, but elem.getBoundingClientRect used on elem stops any future transitions, thats why after position, we hides and show elem again
 		this.v.popover.css('display','none');
 		this.v.popover[0].clientHeight;//force relayout
 		this.v.popover.css('display','block');
-
 
 		this.v.popover.addClass('njp-show-'+this.o.animShow);
 		this.v.popover[0].clientHeight;//force relayout
@@ -174,10 +169,12 @@ proto.show = function () {
 	} else {
 		that._cb_shown();
 	}
+
+	return this;
 }
 
 proto.hide = function () {
-	if(this._o.status !== 'shown') return;
+	if(this._o.state!== 'shown') return;
 	var o = this.o,
 		that = this;
 
@@ -364,9 +361,9 @@ proto.destroy = function () {
 
 	if(o.elem && !o.elem.njPopover) return;//nothing to destroy, plugin not initialized
 
-	this._cb_destroy();
-
 	this.hide();
+
+	this._cb_destroy();
 
 	//remove all handlers
 	if(o.elem) o.$elem.off('.njp');
@@ -396,7 +393,7 @@ proto._setTrigger = function () {
 			o.$elem.on('click.njp', function (e) {
 						e.preventDefault();
 
-						if(this.njPopover._o.status === 'shown') {
+						if(this.njPopover._o.state === 'shown') {
 							this.njPopover.hide();
 							return;
 						}
@@ -553,65 +550,78 @@ proto._getMaxTransitionDuration = function (el) {
 
 
 
+//callbacks
+proto._cb_inited = function () {//cb - callback
+	this._o.state = 'inited';
+
+	var o = this.o;
+
+	if(o.elem) o.elem.njPopover = this;
+
+	$(document).triggerHandler('njp_inited', [this]);
+	if(o.$elem.length) o.$elem.triggerHandler('njp_inited', [this]);
+	if(typeof o.init === 'function') o.init.call(this);
+}
+
 proto._cb_positioned = function () {
 	var o = this.o;
 
 	$(document).triggerHandler('njp_positioned', [this.v.wrap[0], this]);
 	if(o.$elem.length) o.$elem.triggerHandler('njp_positioned', [this.v.wrap[0], this]);
-	if(o.positioned) o.positioned.call(this, this.v.wrap[0]);
+	if(typeof o.positioned === 'function') o.positioned.call(this, this.v.wrap[0]);
 }
 
-proto._cb_show = function () {//cb - callback
-	this._o.status = 'show';
+proto._cb_show = function () {
+	this._o.state = 'show';
 	
 	var o = this.o;
 
 	$(document).trigger('njp_show', [this.v.wrap[0], this]);
 	if(o.$elem.length) o.$elem.triggerHandler('njp_show', [this.v.wrap[0], this]);	
-	if(o.show) o.show.call(this, this.v.wrap[0]);
+	if(typeof o.show === 'function') return o.show.call(this, this.v.wrap[0]);
 }
 proto._cb_shown = function () {
-	this._o.status = 'shown';
+	this._o.state = 'shown';
 
 	var o = this.o;
 
 	$(document).triggerHandler('njp_shown', [this.v.wrap[0], this]);
 	if(o.$elem.length) o.$elem.triggerHandler('njp_shown', [this.v.wrap[0], this]);	
-	if(o.shown) o.shown.call(this, this.v.wrap[0]);
+	if(typeof o.shown === 'function') o.shown.call(this, this.v.wrap[0]);
 }
 proto._cb_hide = function () {
-	this._o.status = 'hide';
+	this._o.state = 'hide';
 
 	var o = this.o;
 
 	$(document).triggerHandler('njp_hide', [this.v.wrap[0], this]);
 	if(o.$elem.length) o.$elem.triggerHandler('njp_hide', [this.v.wrap[0], this]);	
-	if(o.hide) o.hide.call(this, this.v.wrap[0]);
+	if(typeof o.hide === 'function') o.hide.call(this, this.v.wrap[0]);
 }
 proto._cb_hidden = function () {
-	this._o.status = 'hidden';
+	this._o.state = 'inited';
 
 	var o = this.o;
 	
 	$(document).triggerHandler('njp_hidden', [this.v.wrap[0], this]);
 	if(o.$elem.length) o.$elem.triggerHandler('njp_hidden', [this.v.wrap[0], this]);	
-	if(o.hidden) o.hidden.call(this, this.v.wrap[0]);
+	if(typeof o.hidden === 'function') o.hidden.call(this, this.v.wrap[0]);
 }
 proto._cb_destroy = function () {
 	var o = this.o;
 	
 	$(document).triggerHandler('njp_destroy', [this.v.wrap[0], this]);
 	if(o.$elem.length) o.$elem.triggerHandler('njp_destroy', [this.v.wrap[0], this]);	
-	if(o.destroy) o.destroy.call(this, this.v.wrap[0]);
+	if(typeof o.destroy === 'function') o.destroy.call(this, this.v.wrap[0]);
 }
 proto._cb_destroyed = function () {
-	this._o.status = 'destroyed';
+	this._o.state = 'destroyed';
 
 	var o = this.o;
 	
 	$(document).triggerHandler('njp_destroyed', [this.v.wrap[0], this]);
 	if(o.$elem.length) o.$elem.triggerHandler('njp_destroyed', [this.v.wrap[0], this]);	
-	if(o.destroyed) o.destroyed.call(this, this.v.wrap[0]);
+	if(typeof o.destroyed === 'function') o.destroyed.call(this, this.v.wrap[0]);
 }
 
 
@@ -627,7 +637,7 @@ njPopover.defaults = {
 	// coords: [],//(array with 2 numbers) X/Y coordinates for positioning popover. Used only when call popover without elem.
 
 	trigger: 'click',//(false || click || hover || focus || follow) how popover is triggered. false - manual triggering
-	out: 'self',//(boolean || self) click outside popover will close it
+	out: 'self',//(boolean || self) click outside popover will close it, if self is selected, click on popover will not close popover
 	margin: 5,//(number) margin from element
 
 
@@ -643,8 +653,66 @@ njPopover.defaults = {
 	placement: 'top',//(top || bottom || left || right) how to position the popover
 	auto: true,//(boolean) this option dynamically reorient the popover. For example, if placement is "left", the popover will display to the left when possible, otherwise it will display right.
 
-	anim: false,//(false || string) name of animation (see animation section)
+	anim: 'scale',//(false || string) name of animation (see animation section)
 	// waitImg: true//if we have img in popover with [data-njp-img="true"], wait until img begin downloading(to know it's size), only than show tooltip
 }
 
 })(window, document);
+
+// //autobind
+// $(document).on('DOMContentLoaded', function () {
+// 	setTimeout(function(){
+// 		$(njPopover.defaults.attr).each(function () {
+// 			// njTabs({
+// 			// 	tabs: $(this)
+// 			// })
+// 		})
+// 	}, 50)//set minimal timeout for purpose, if user will set handler to events with using DOMContentLoaded
+// })
+
+
+//jQuery, j plugin
+// $.fn.njPopover = function(options) {
+// 	var args = arguments;
+
+// 	if(!args.length) {//if we have no arguments at all
+// 		if(this[0].njTabs) {//if tabs inited on this element, return instance
+// 			return this[0].njTabs;
+// 		} else {//if tabs not inited on this element, try to init(maybe we have data attributes)
+// 			this.each(function () {
+// 				var opts = $.extend({}, options);
+// 				opts.tabs = $(this);
+// 				njTabs(options);
+// 			})
+// 			return this[0].njTabs;
+// 		}
+// 	} else if(typeof options === 'string') {
+// 		if(options[0] !== '_') {
+// 			var returns;
+
+// 			this.each(function () {
+// 				var instance = this.njTabs;
+
+// 				if (instance instanceof njTabs && typeof instance[options] === 'function') {
+// 				    returns = instance[options].apply( instance, Array.prototype.slice.call( args, 1 ) );
+// 				}
+// 			})
+// 		} else {
+// 			throw new Error('njTabs plugin does not permit private methods.');
+// 		}
+
+// 		return returns !== undefined ? returns : this;
+// 	} else {//if we have arguments
+// 		return this.each(function () {
+// 			if(typeof options === 'object') {//we have options passed in arguments, init tabs with this options
+// 				var opts = $.extend({}, options);
+// 				opts.tabs = $(this);
+// 				njTabs(options);
+// 			} else if(typeof options === 'number') {//we have number in arguments, it is shortcut for .show(number) method
+// 				if(this.njTabs) {
+// 					this.njTabs.show(options);
+// 				}
+// 			}
+// 		});
+// 	}
+// };
