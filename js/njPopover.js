@@ -8,7 +8,7 @@
 var $ = window.jQuery || window.j;
 
 if(!$) {
-	throw new Error('njPopover requires jQuery or "j" library (https://github.com/Nejik/j)');
+	throw new Error('njPopover,  requires jQuery or "j" library (https://github.com/Nejik/j)');
 	return false;
 }
 //constructor
@@ -34,17 +34,24 @@ proto._init = function (opts) {
 	var o = this.o = $.extend(true, {}, njPopover.defaults, opts),
 		that = this;
 
-	
 	this._o = {'coords':{}};//inner options
 
-	this.v = {};//object with cached variables
+	this.v = {//object with cached variables
+		html: $('html'),
+		body: $('body')
+	};
 
 	o.$elem = $(o.elem);
 	o.elem = $(o.elem)[0];//for case if we get jquery object in o.elem
 
 	if(o.elem) {
-		if(o.elem.njPopover) return;//we can't initialize 2 times
+		if(o.elem.njPopover) {
+			throw new Error('njPopover, can\'t be initialized again on this element.');
+			return;//we 
+		}
 		this._gatherData(true);
+
+		o.elem.njPopover = this;
 	} else {
 		o.trigger = false;//if we have no element, we should use manually show/hide
 	}
@@ -195,9 +202,11 @@ proto.hide = function () {
 		this._cb_hidden();
 	}
 	
-	$('body').append(this._o.content);
+	
 
 	function removePopover() {
+		that.v.body.append(that._o.content);
+
 		that.v.wrap.remove();
 
 		// delete that.v.wrap;
@@ -206,6 +215,8 @@ proto.hide = function () {
 		$(document).off('click.njp_out_'+that._o.out);
 		delete that._o.out;
 	}
+
+	return this;
 }
 
 proto.setPosition = function (e) {
@@ -319,8 +330,8 @@ proto.setPosition = function (e) {
 
 	function getCoords(elem) {
 		if(elem === document) {
-			var body = $('body')[0],
-				html = $('html')[0],
+			var body = that.v.body[0],
+				html = that.v.html[0],
 				width = document.body.scrollWidth,
 				height = Math.max( body.scrollHeight, body.offsetHeight, 
 					   html.clientHeight, html.scrollHeight, html.offsetHeight);
@@ -356,6 +367,8 @@ proto.setPosition = function (e) {
 			};
 		}
 	}
+
+	return this;
 }
 
 proto.destroy = function () {
@@ -380,6 +393,8 @@ proto.destroy = function () {
 	delete o.elem.njPopover;
 
 	this._cb_destroyed();
+
+	return this;
 }
 
 proto._setTrigger = function () {
@@ -395,34 +410,33 @@ proto._setTrigger = function () {
 			o.$elem.on('click.njp', function (e) {
 						e.preventDefault();
 
-						if(this.njPopover._o.state === 'shown') {
-							this.njPopover.hide();
+						if(that._o.state === 'shown') {
+							that.hide();
 							return;
 						}
-						this.njPopover.show()
+						that.show()
 
 					})
 
 		break;
 		case 'follow':
 			o.$elem.on('mouseenter.njp', function (e) {
-						this.njPopover.show();
+						that.show();
 						$(document).off('mousemove.njp').on('mousemove.njp', function (e) {
 							that.setPosition(e);
 						})
 					})
 			.on('mouseleave.njp', function (e) {
-				var that = this;
 					//if our popover loacated above trigger element, don't hide popover
 					if($(e.relatedTarget).closest('.njPopover').length) {
 						$(e.relatedTarget).closest('.njPopover').on('mouseleave.njp', function () {
-							that.njPopover.hide();
+							that.hide();
 							$(document).off('mousemove.njp');
 						})
 						return;
 					}
 
-				this.njPopover.hide();
+				that.hide();
 				$(document).off('mousemove.njp');
 			})
 		break;
@@ -442,7 +456,7 @@ proto._setTrigger = function () {
 
 		if(showEvent) {
 			o.$elem.on(showEvent, function (e) {
-						this.njPopover.show();
+						that.show();
 
 						e.preventDefault();
 					})
@@ -450,18 +464,17 @@ proto._setTrigger = function () {
 
 		if(hideEvent) {
 			o.$elem.on(hideEvent, function (e) {
-				var that = this;
 				if(o.trigger === 'hover') {
 					//if our popover loacated above trigger element, don't hide popover
 					if($(e.relatedTarget).closest('.njPopover').length) {
 						$(e.relatedTarget).closest('.njPopover').on(hideEvent, function () {
-							that.njPopover.hide();
+							that.hide();
 						})
 						return;
 					}
 				}
 				e.preventDefault();
-				this.njPopover.hide();
+				that.hide();
 			})
 		}
 	}
@@ -554,25 +567,14 @@ proto._getMaxTransitionDuration = function (el) {
 
 //callbacks
 proto._cb_inited = function () {//cb - callback
-	this._o.state = 'inited';
-
 	var o = this.o;
 
-	if(o.elem) o.elem.njPopover = this;
+	this._o.state = 'inited';
 
 	$(document).triggerHandler('njp_inited', [this]);
 	if(o.$elem.length) o.$elem.triggerHandler('njp_inited', [this]);
 	if(typeof o.init === 'function') o.init.call(this);
 }
-
-proto._cb_positioned = function () {
-	var o = this.o;
-
-	$(document).triggerHandler('njp_positioned', [this.v.wrap[0], this]);
-	if(o.$elem.length) o.$elem.triggerHandler('njp_positioned', [this.v.wrap[0], this]);
-	if(typeof o.positioned === 'function') o.positioned.call(this, this.v.wrap[0]);
-}
-
 proto._cb_show = function () {
 	this._o.state = 'show';
 	
@@ -581,6 +583,13 @@ proto._cb_show = function () {
 	$(document).trigger('njp_show', [this.v.wrap[0], this]);
 	if(o.$elem.length) o.$elem.triggerHandler('njp_show', [this.v.wrap[0], this]);	
 	if(typeof o.show === 'function') return o.show.call(this, this.v.wrap[0]);
+}
+proto._cb_positioned = function () {
+	var o = this.o;
+
+	$(document).triggerHandler('njp_positioned', [this.v.wrap[0], this]);
+	if(o.$elem.length) o.$elem.triggerHandler('njp_positioned', [this.v.wrap[0], this]);
+	if(typeof o.positioned === 'function') o.positioned.call(this, this.v.wrap[0]);
 }
 proto._cb_shown = function () {
 	this._o.state = 'shown';
