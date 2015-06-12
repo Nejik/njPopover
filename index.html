@@ -105,14 +105,9 @@
 				<!-- <a href="#!" class="test" style="margin-left:0px;" title='popover content<br>popover content<br>popover content' data-njp-type="selector">tooltip</a> -->
 				<a href="#!" class="test" style="margin-left:0px;" title='.fy' data-njp-type="selector">tooltip</a>
 			</div>
-		<!-- <a href="#!" class="test" style="margin-left:0px;" title='<img src="http://www.a-pdf.com/faq/i/assistant_for_your_flipbook1.jpg" alt="" style="width:360px;height:363px;" />'>tooltip</a> -->
-		<!-- <div class="viewport" style="text-align:right;width:300px;border:1px solid red;padding:30px;padding-left:0;padding-bottom:0;margin-left:50px;margin-bottom:50px;">
-		</div> -->
-		<!-- <a href="#!" class="test" style="margin-left:0px;" title='popover content'>tooltip</a> -->
-		<!-- </div> -->
 		<span class="fy">fy</span>
 
-		// <script src="../j/j.js"></script>
+		<script src="../j/j.js"></script>
 		<!-- // <script src="js/jquery-1.11.2.min.js"></script> -->
 		<script src="js/njPopover.js"></script>
 
@@ -126,9 +121,11 @@
 		<script>
 			
 			new njPopover({
-				// coords: [100,100],
+				coords: function () {
+					return false;
+				},
 				content: 'blah',
-				elem: $('.test25'),
+				elem: $('.test')
 			});
 			
 		</script>

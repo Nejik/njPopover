@@ -47,7 +47,7 @@ proto._init = function (opts) {
 	if(o.elem) {
 		if(o.elem.njPopover) {
 			throw new Error('njPopover, can\'t be initialized again on this element.');
-			return;//we 
+			return;
 		}
 		this._gatherData(true);
 
@@ -223,7 +223,9 @@ proto.setPosition = function (e) {
 	var o = this.o,
 		that = this;
 
-	if(o.coords) {
+	if(typeof o.coords === 'function') o.coords = o.coords.call(this);
+
+	if($.isArray(o.coords)) {
 		this.v.wrap.css({'left':o.coords[0]+'px',"top":o.coords[1]+'px'});
 
 		//remember proper coordinates

@@ -9,4 +9,7 @@
 --потестировать в ие, не забыть проверить анимации, что если трансишены не работают
 
 //в хелп
-callback show triggers after positioning
+callback show triggers after positioning - ?
+
+- если колбэк show возвращает false, поповер не показывается
+- coords и content могут быть функциями, они должны возвращать соответсвенно array и string
