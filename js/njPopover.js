@@ -139,6 +139,7 @@ proto.show = function () {
 		if(!this._o.content) this._o.content = $(o.content);
 
 		if(this._o.content.length) {
+			this._o.content.css('display','block')
 			this.v.popover.append(this._o.content);
 		} else {
 			return;
@@ -182,11 +183,11 @@ proto.show = function () {
 }
 
 proto.hide = function () {
-	if(this._o.state!== 'shown') return;
+	if(this._o.state !== 'shown') return;
 	var o = this.o,
 		that = this;
 
-	this._cb_hide();
+	if(this._cb_hide() === false) return;//callback hide
 
 	if(o.animHide) {
 		this.v.popover.addClass('njp-hide-'+this.o.animHide);
@@ -208,9 +209,6 @@ proto.hide = function () {
 		that.v.body.append(that._o.content);
 
 		that.v.wrap.remove();
-
-		// delete that.v.wrap;
-		// that.o.content = null;??зачем это было - хз
 
 		$(document).off('click.njp_out_'+that._o.out);
 		delete that._o.out;
@@ -459,7 +457,6 @@ proto._setTrigger = function () {
 		if(showEvent) {
 			o.$elem.on(showEvent, function (e) {
 						that.show();
-
 						e.preventDefault();
 					})
 		}
@@ -668,20 +665,20 @@ njPopover.defaults = {
 
 	anim: 'scale',//(false || string) name of animation (see animation section)
 	// waitImg: true//if we have img in popover with [data-njp-img="true"], wait until img begin downloading(to know it's size), only than show tooltip
+
+	autobind: '[data-toggle="popover"]'//(selector) selector that will be used for autobind
 }
 
 })(window, document);
 
-// //autobind
-// $(document).on('DOMContentLoaded', function () {
-// 	setTimeout(function(){
-// 		$(njPopover.defaults.attr).each(function () {
-// 			// njTabs({
-// 			// 	tabs: $(this)
-// 			// })
-// 		})
-// 	}, 50)//set minimal timeout for purpose, if user will set handler to events with using DOMContentLoaded
-// })
+//autobind
+$(document).on('DOMContentLoaded', function () {
+	$(njPopover.defaults.autobind).each(function () {
+		new njPopover({
+			elem: $(this)
+		})
+	})
+})
 
 
 //jQuery, j plugin

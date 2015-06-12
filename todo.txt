@@ -11,5 +11,5 @@
 //в хелп
 callback show triggers after positioning - ?
 
-- если колбэк show возвращает false, поповер не показывается
+- если колбэк show или hide возвращает false, поповер не показывается/не скрывается
 - coords и content могут быть функциями, они должны возвращать соответсвенно array и string
