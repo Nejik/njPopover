@@ -681,48 +681,48 @@ $(document).on('DOMContentLoaded', function () {
 })
 
 
-//jQuery, j plugin
-// $.fn.njPopover = function(options) {
-// 	var args = arguments;
+// jQuery, j plugin
+$.fn.njPopover = function(options) {
+	var args = arguments;
 
-// 	if(!args.length) {//if we have no arguments at all
-// 		if(this[0].njTabs) {//if tabs inited on this element, return instance
-// 			return this[0].njTabs;
-// 		} else {//if tabs not inited on this element, try to init(maybe we have data attributes)
-// 			this.each(function () {
-// 				var opts = $.extend({}, options);
-// 				opts.tabs = $(this);
-// 				njTabs(options);
-// 			})
-// 			return this[0].njTabs;
-// 		}
-// 	} else if(typeof options === 'string') {
-// 		if(options[0] !== '_') {
-// 			var returns;
+	if(!args.length) {//if we have no arguments at all
+		if(this[0].njPopover) {//if plugin inited on this element, return instance
+			return this[0].njPopover;
+		} else {//if plugin not inited on this element, try to init(maybe we have data attributes)
+			this.each(function () {
+				var opts = $.extend({}, options);
+				opts.tabs = $(this);
+				njTabs(options);
+			})
+			return this[0].njTabs;
+		}
+	} else if(typeof options === 'string') {
+		if(options[0] !== '_') {
+			var returns;
 
-// 			this.each(function () {
-// 				var instance = this.njTabs;
+			this.each(function () {
+				var instance = this.njTabs;
 
-// 				if (instance instanceof njTabs && typeof instance[options] === 'function') {
-// 				    returns = instance[options].apply( instance, Array.prototype.slice.call( args, 1 ) );
-// 				}
-// 			})
-// 		} else {
-// 			throw new Error('njTabs plugin does not permit private methods.');
-// 		}
+				if (instance instanceof njTabs && typeof instance[options] === 'function') {
+				    returns = instance[options].apply( instance, Array.prototype.slice.call( args, 1 ) );
+				}
+			})
+		} else {
+			throw new Error('njTabs plugin does not permit private methods.');
+		}
 
-// 		return returns !== undefined ? returns : this;
-// 	} else {//if we have arguments
-// 		return this.each(function () {
-// 			if(typeof options === 'object') {//we have options passed in arguments, init tabs with this options
-// 				var opts = $.extend({}, options);
-// 				opts.tabs = $(this);
-// 				njTabs(options);
-// 			} else if(typeof options === 'number') {//we have number in arguments, it is shortcut for .show(number) method
-// 				if(this.njTabs) {
-// 					this.njTabs.show(options);
-// 				}
-// 			}
-// 		});
-// 	}
-// };
+		return returns !== undefined ? returns : this;
+	} else {//if we have arguments
+		return this.each(function () {
+			if(typeof options === 'object') {//we have options passed in arguments, init tabs with this options
+				var opts = $.extend({}, options);
+				opts.tabs = $(this);
+				njTabs(options);
+			} else if(typeof options === 'number') {//we have number in arguments, it is shortcut for .show(number) method
+				if(this.njTabs) {
+					this.njTabs.show(options);
+				}
+			}
+		});
+	}
+};
