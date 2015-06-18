@@ -1,4 +1,4 @@
- /*!
+/*!
  * njPopover - v0.2
  * nejikrofl@gmail.com
  * Copyright (c) 2015 N.J.
@@ -88,7 +88,7 @@ proto.show = function () {
 	this.v.container = $(o.container);
 	if(!this.v.container.length) return;//don't do anything, if we have no container
 
-	this.v.wrap = $(o.template);
+	this.v.wrap = $(o.template).css({'position':'absolute'});
 	this.v.wrap[0].njPopover = this;
 	(o.viewport === 'document') ? this.v.viewport = $(document) : this.v.viewport = $(o.viewport);
 
@@ -139,7 +139,12 @@ proto.show = function () {
 		if(!this._o.content) this._o.content = $(o.content);
 
 		if(this._o.content.length) {
-			this._o.content.css('display','block')
+			//make element visible
+			if(this._o.content.css('display') === 'none') {
+				this._o.content.css('display', 'block');
+				this._o.contentDisplayNone = true;
+			}
+
 			this.v.popover.append(this._o.content);
 		} else {
 			return;
@@ -206,9 +211,21 @@ proto.hide = function () {
 	
 
 	function removePopover() {
+		if(that._o.contentDisplayNone) {
+			that._o.content.css('display', 'none');
+			delete that._o.contentDisplayNone;
+		}
 		that.v.body.append(that._o.content);
+		delete that._o.content;
 
 		that.v.wrap.remove();
+		delete that._o.coords.popoverCoords;
+
+		//delete all variables, because they generated new on every show
+		delete that.v.container;
+		delete that.v.wrap;
+		delete that.v.popover;
+		delete that.v.viewport;
 
 		$(document).off('click.njp_out_'+that._o.out);
 		delete that._o.out;
@@ -227,7 +244,7 @@ proto.setPosition = function (e) {
 		this.v.wrap.css({'left':o.coords[0]+'px',"top":o.coords[1]+'px'});
 
 		//remember proper coordinates
-		this._o.coords.tooltipCoords = getCoords(this.v.wrap[0]);
+		this._o.coords.popoverCoords = getCoords(this.v.wrap[0]);
 
 		this._cb_positioned();
 		return;
@@ -235,7 +252,7 @@ proto.setPosition = function (e) {
 
 
 	var eC = this._o.coords.elemCoords = getCoords(o.elem),//trigger element coordinates
-		tC = this._o.coords.tooltipCoords = getCoords(this.v.wrap[0]),//popover coordinates(coordinates now fake, from this var we need outerWidth/outerHeight)
+		tC = this._o.coords.popoverCoords = getCoords(this.v.wrap[0]),//popover coordinates(coordinates now fake, from this var we need outerWidth/outerHeight)
 
 		left,
 		top;
@@ -324,7 +341,7 @@ proto.setPosition = function (e) {
 	this.v.wrap.css({'left':left+'px',"top":top+'px'});
 
 	//remember proper coordinates
-	this._o.coords.tooltipCoords = getCoords(this.v.wrap[0]);
+	this._o.coords.popoverCoords = getCoords(this.v.wrap[0]);
 
 	this._cb_positioned();
 
@@ -376,9 +393,10 @@ proto.destroy = function () {
 
 	if(o.elem && !o.elem.njPopover) return;//nothing to destroy, plugin not initialized
 
-	this.hide();
-
+	console.log(this.v)
 	this._cb_destroy();
+
+	this.hide();
 
 	//remove all handlers
 	if(o.elem) o.$elem.off('.njp');
@@ -613,25 +631,25 @@ proto._cb_hidden = function () {
 
 	var o = this.o;
 	
-	$(document).triggerHandler('njp_hidden', [this.v.wrap[0], this]);
-	if(o.$elem.length) o.$elem.triggerHandler('njp_hidden', [this.v.wrap[0], this]);	
-	if(typeof o.hidden === 'function') o.hidden.call(this, this.v.wrap[0]);
+	$(document).triggerHandler('njp_hidden', [this]);
+	if(o.$elem.length) o.$elem.triggerHandler('njp_hidden', [this]);	
+	if(typeof o.hidden === 'function') o.hidden.call(this);
 }
 proto._cb_destroy = function () {
 	var o = this.o;
 	
-	$(document).triggerHandler('njp_destroy', [this.v.wrap[0], this]);
-	if(o.$elem.length) o.$elem.triggerHandler('njp_destroy', [this.v.wrap[0], this]);	
-	if(typeof o.destroy === 'function') o.destroy.call(this, this.v.wrap[0]);
+	$(document).triggerHandler('njp_destroy', [this]);
+	if(o.$elem.length) o.$elem.triggerHandler('njp_destroy', [this]);	
+	if(typeof o.destroy === 'function') o.destroy.call(this);
 }
 proto._cb_destroyed = function () {
 	this._o.state = 'destroyed';
 
 	var o = this.o;
 	
-	$(document).triggerHandler('njp_destroyed', [this.v.wrap[0], this]);
-	if(o.$elem.length) o.$elem.triggerHandler('njp_destroyed', [this.v.wrap[0], this]);	
-	if(typeof o.destroyed === 'function') o.destroyed.call(this, this.v.wrap[0]);
+	$(document).triggerHandler('njp_destroyed', [this]);
+	if(o.$elem.length) o.$elem.triggerHandler('njp_destroyed', [this]);	
+	if(typeof o.destroyed === 'function') o.destroyed.call(this);
 }
 
 
@@ -685,44 +703,44 @@ $(document).on('DOMContentLoaded', function () {
 $.fn.njPopover = function(options) {
 	var args = arguments;
 
+	if(!this.length) return;//exit if there is no items in jQuery object
+
 	if(!args.length) {//if we have no arguments at all
 		if(this[0].njPopover) {//if plugin inited on this element, return instance
 			return this[0].njPopover;
 		} else {//if plugin not inited on this element, try to init(maybe we have data attributes)
 			this.each(function () {
-				var opts = $.extend({}, options);
-				opts.tabs = $(this);
-				njTabs(options);
+				new njPopover({elem:this});
 			})
-			return this[0].njTabs;
+			return this[0].njPopover;
 		}
-	} else if(typeof options === 'string') {
+	} else if(typeof options === 'string') {//if we have string, we want to call method
 		if(options[0] !== '_') {
 			var returns;
 
 			this.each(function () {
-				var instance = this.njTabs;
+				var instance = this.njPopover;
 
-				if (instance instanceof njTabs && typeof instance[options] === 'function') {
+				if (instance instanceof njPopover && typeof instance[options] === 'function') {
 				    returns = instance[options].apply( instance, Array.prototype.slice.call( args, 1 ) );
 				}
 			})
 		} else {
-			throw new Error('njTabs plugin does not permit private methods.');
+			throw new Error('njPopover plugin does not permit private methods.');
 		}
 
-		return returns !== undefined ? returns : this;
+		return returns !== undefined ? returns : this;//return result of method or return instance
 	} else {//if we have arguments
 		return this.each(function () {
-			if(typeof options === 'object') {//we have options passed in arguments, init tabs with this options
-				var opts = $.extend({}, options);
-				opts.tabs = $(this);
-				njTabs(options);
-			} else if(typeof options === 'number') {//we have number in arguments, it is shortcut for .show(number) method
-				if(this.njTabs) {
-					this.njTabs.show(options);
-				}
+			if(typeof options === 'object') {//we have options passed in arguments, init plugin with this options
+				new njPopover({elem:this})
 			}
+			//shortcuts for different methods, this not works, just example
+			// else if(typeof options === 'number') {//we have number in arguments, it is shortcut for .show(number) method
+			// 	if(this.njPopover) {
+			// 		this.njPopover.show(options);
+			// 	}
+			// }
 		});
 	}
 };
