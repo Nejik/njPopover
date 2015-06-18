@@ -61,7 +61,10 @@ proto._init = function (opts) {
 	this._cb_inited();
 }
 proto.show = function () {
-	if(this._o.state !== 'inited') return;
+	if(this._o.state !== 'inited') {
+		throw new Error('njPopover, plugin not inited.');
+		return;
+	}
 	//todo: заготовка для аякса
 	// if(this._o.shown && opts) {
 	// 	//opts - передавать в arguments
@@ -80,13 +83,22 @@ proto.show = function () {
 
 	if(typeof o.content === 'function') o.content = o.content.call(this);
 
-	if(!o.content || (typeof o.content !== 'string' && typeof o.content !== 'number')) return;//don't show popover, if we have no content for popover
+	if(!o.content || (typeof o.content !== 'string' && typeof o.content !== 'number')) {
+		throw new Error('njPopover, no content for popover.');
+		return;//don't show popover, if we have no content for popover
+	}
 
-	if(!o.elem && !o.coords) return;//don't show popover if we have no coords for showing
+	if(!o.elem && !o.coords) {
+		throw new Error('njPopover, no coords for showing.');
+		return;//don't show popover if we have no coords for showing
+	}
 
 
 	this.v.container = $(o.container);
-	if(!this.v.container.length) return;//don't do anything, if we have no container
+	if(!this.v.container.length) {
+		throw new Error('njPopover, no container for popover.');
+		return;//don't do anything, if we have no container
+	}
 
 	this.v.wrap = $(o.template).css({'position':'absolute'});
 	this.v.wrap[0].njPopover = this;
@@ -147,6 +159,7 @@ proto.show = function () {
 
 			this.v.popover.append(this._o.content);
 		} else {
+			throw new Error('njPopover, wrong content selector.');
 			return;
 		}
 	break;
@@ -188,7 +201,10 @@ proto.show = function () {
 }
 
 proto.hide = function () {
-	if(this._o.state !== 'shown') return;
+	if(this._o.state !== 'shown') {
+		throw new Error('njPopover, we can hide only showed popovers.');
+		return;
+	}
 	var o = this.o,
 		that = this;
 
@@ -391,7 +407,10 @@ proto.setPosition = function (e) {
 proto.destroy = function () {
 	var o = this.o;
 
-	if(o.elem && !o.elem.njPopover) return;//nothing to destroy, plugin not initialized
+	if(o.elem && !o.elem.njPopover) {
+		throw new Error('njPopover, nothing to destroy, plugin not initialized.');
+		return;//nothing to destroy, plugin not initialized
+	}
 
 	console.log(this.v)
 	this._cb_destroy();
@@ -703,7 +722,10 @@ $(document).on('DOMContentLoaded', function () {
 $.fn.njPopover = function(options) {
 	var args = arguments;
 
-	if(!this.length) return;//exit if there is no items in jQuery object
+	if(!this.length) {
+		throw new Error('njPopover, there is no items in jQuery object.');
+		return;//exit if there is no items in jQuery object
+	}
 
 	if(!args.length) {//if we have no arguments at all
 		if(this[0].njPopover) {//if plugin inited on this element, return instance
@@ -712,7 +734,7 @@ $.fn.njPopover = function(options) {
 			this.each(function () {
 				new njPopover({elem:this});
 			})
-			return this[0].njPopover;
+			return this[0].njPopover;//return instance only for first element
 		}
 	} else if(typeof options === 'string') {//if we have string, we want to call method
 		if(options[0] !== '_') {
@@ -726,7 +748,7 @@ $.fn.njPopover = function(options) {
 				}
 			})
 		} else {
-			throw new Error('njPopover plugin does not permit private methods.');
+			throw new Error('njPopover, plugin does not permit private methods.');
 		}
 
 		return returns !== undefined ? returns : this;//return result of method or return instance
