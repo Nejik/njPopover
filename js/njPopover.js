@@ -74,12 +74,15 @@ proto._init = function (opts) {
 
 	this._setTrigger();
 
-
-	//remember instance id in this set, for deleting it when close (todo)
-	this._o.id = njPopover.instances.length;
-	//write instance to global set of all instances
-	Array.prototype.push.call(njPopover.instances, this);
-
+	//if it immidiatly invoked function, we shouldn't write it in global set of instances
+	if(o._iife) {
+		this._o.id = +new Date();
+	} else {
+		//remember instance id in this set, for deleting it when close (todo)
+		this._o.id = njPopover.instances.length;
+		//write instance to global set of all instances
+		Array.prototype.push.call(njPopover.instances, this);
+	}
 
 	this._cb_inited();
 }
@@ -108,7 +111,7 @@ proto.show = function () {
 		throw new Error('njPopover, no content for popover.');//don't show popover, if we have no content for popover
 	}
 
-	if(!o.elem && !$.isArray(o.coords)) {
+	if(!o.elem && !o.coords) {
 		throw new Error('njPopover, no coords for showing.');//don't show popover if we have no coords for showing
 	}
 
@@ -272,13 +275,6 @@ proto.hide = function (status) {
 		$(document).off('click.njp_out_'+that._o.id);
 
 		that._cb_hidden();
-
-		if(that.o._iife) {
-			that.destroy();
-		}
-
-
-		console.log(njPopover.instances)
 	}
 
 	return this;
@@ -288,7 +284,10 @@ proto.setPosition = function (e) {
 	var o = this.o,
 		that = this;
 
-	if(typeof o.coords === 'function') o.coords = o.coords.call(this);
+	if(typeof this._o.coordsFunc === 'function' || typeof o.coords === 'function') {
+		this._o.coordsFunc = o.coords;
+		o.coords = this._o.coordsFunc.call(this);
+	}
 
 	if($.isArray(o.coords)) {
 		this.v.wrap.css({'left':o.coords[0]+'px',"top":o.coords[1]+'px'});
@@ -298,6 +297,8 @@ proto.setPosition = function (e) {
 
 		this._cb_positioned();
 		return;
+	} else {
+		throw new Error('njPopover, final coords should be array, popover position is wrong.');
 	}
 
 
@@ -463,8 +464,10 @@ proto.destroy = function () {
 
 		if(o.elem) delete o.elem.njPopover;
 
-		delete njPopover.instances[this._o.id];
-		njPopover.instances.length--;
+		if(!o._iife) {
+			delete njPopover.instances[this._o.id];
+			njPopover.instances.length--;
+		}
 
 		this._cb_destroyed();
 
