@@ -282,15 +282,17 @@ proto.hide = function (status) {
 
 proto.setPosition = function (e) {
 	var o = this.o,
-		that = this;
-
-	if(typeof this._o.coordsFunc === 'function' || typeof o.coords === 'function') {
-		this._o.coordsFunc = o.coords;
-		o.coords = this._o.coordsFunc.call(this);
-	}
+		that = this,
+		coords;
 
 	if($.isArray(o.coords)) {
-		this.v.wrap.css({'left':o.coords[0]+'px',"top":o.coords[1]+'px'});
+		coords = o.coords;
+	} else if(typeof o.coords === 'function') {
+		coords = o.coords.call(this)
+	}
+
+	if($.isArray(coords)) {
+		this.v.wrap.css({'left':coords[0]+'px',"top":coords[1]+'px'});
 
 		//remember proper coordinates
 		this._o.coords.popoverCoords = getCoords(this.v.wrap[0]);
