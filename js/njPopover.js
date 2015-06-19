@@ -26,12 +26,12 @@ njPopover.instances = 	{//we make array like object with all active instances of
 						}
 
 
-njPopover.getLast = function () {//public function that returns last instance of popup
+njPopover.getLast = njPopover.last = function () {//public function that returns last instance of popover
 	return njPopover.instances[njPopover.instances.length - 1];
 }
 
-njPopover.hideLast = function (status) {//public function that close last instance of popup
-	if(njPopover.instances.length) njPopover.instances[njPopover.instances.length - 1].hide();
+njPopover.hideLast = njPopover.hide = function (status) {//public function that close last instance of popover
+	if(njPopover.instances.length) return njPopover.instances[njPopover.instances.length - 1].hide();
 }
 
 
