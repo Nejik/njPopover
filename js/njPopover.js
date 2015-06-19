@@ -8,8 +8,9 @@
 var $ = window.jQuery || window.j;
 
 if(!$) {
-	throw new Error('njPopover,  requires jQuery or "j" library (https://github.com/Nejik/j)');
+	throw new Error('njPopover, requires jQuery or "j" library (https://github.com/Nejik/j)');
 }
+
 //constructor
 window.njPopover = function(opts) {
 	opts = opts || {};
@@ -21,6 +22,8 @@ window.njPopover = function(opts) {
 	this._init(opts);
 	return this;
 };
+
+//global settings/methods
 njPopover.instances = 	{//we make array like object with all active instances of plugin
 							length:0
 						}
@@ -29,16 +32,14 @@ njPopover.instances = 	{//we make array like object with all active instances of
 njPopover.getLast = njPopover.last = function () {//public function that returns last instance of popover
 	return njPopover.instances[njPopover.instances.length - 1];
 }
-
 njPopover.hideLast = njPopover.hide = function (status) {//public function that close last instance of popover
 	if(njPopover.instances.length) return njPopover.instances[njPopover.instances.length - 1].hide();
 }
-
-
-
 njPopover.forElement = function (elem) {//return instance
 	return $(elem)[0].njPopover;
 }
+
+
 
 var proto = njPopover.prototype;
 
@@ -83,7 +84,7 @@ proto._init = function (opts) {
 }
 proto.show = function () {
 	if(this._o.state !== 'inited') {
-		throw new Error('njPopover, plugin not inited or in not inited state(probably animation is still running).');
+		throw new Error('njPopover, show, plugin not inited or in not inited state(probably animation is still running).');
 	}
 	//todo: заготовка для аякса
 	// if(this._o.shown && opts) {
@@ -99,7 +100,6 @@ proto.show = function () {
 		o.animShow = tmp[0];
 		(tmp[1]) ? o.animHide = tmp[1] : o.animHide = tmp[0];
 	}
-
 
 	if(typeof o.content === 'function') o.content = o.content.call(this);
 
@@ -125,7 +125,8 @@ proto.show = function () {
 
 
 	//find element where we should set content
-	this.v.popover = this.v.wrap.find('.njp')
+	// this.v.popover = this.v.wrap.find('.njp')
+	this.v.popover = this.v.wrap.find('[data-njp]')
 
 	//set content
 	switch(o.type) {
@@ -142,7 +143,7 @@ proto.show = function () {
 			//make element visible
 			if(this._o.content.css('display') === 'none') {
 				this._o.content.css('display', 'block');
-				this._o.contentDisplayNone = true;
+				this._o.contentDisplayNone = true;//flag shows that element we used as content, initially was hidden
 			}
 
 			this.v.popover.append(this._o.content);
@@ -175,7 +176,7 @@ proto.show = function () {
 		this.v.popover[0].clientHeight;//force relayout
 		this.v.popover.addClass('njp-shown-'+this.o.animShow);
 
-		setTimeout(function(){
+		this._o.showTimeout = setTimeout(function(){
 			that.v.popover.removeClass('njp-show-'+that.o.animShow + ' '+ 'njp-shown-'+that.o.animShow);
 
 			that._cb_shown();
@@ -191,7 +192,7 @@ proto.show = function () {
 
 			if(o.elem) {
 				if(o.out === 'self') {
-					if($el[0] !== o.elem && !$el.closest('.njp-wrap').length) {
+					if($el[0] !== o.elem && !$el.closest('[data-njp-wrap]').length) {
 						that.hide();
 					}
 				} else {
@@ -201,7 +202,7 @@ proto.show = function () {
 				}
 			} else {
 				if(o.out === 'self') {
-					if(!$el.closest('.njp-wrap').length) {
+					if(!$el.closest('[data-njp-wrap]').length) {
 						that.hide();
 					}
 				} else {
@@ -219,11 +220,22 @@ proto.show = function () {
 
 proto.hide = function (status) {
 	if(this._o.state !== 'show' && this._o.state !== 'shown') {
-		throw new Error('njPopover, we can hide only showed popovers(probably animation is still running).');
+		throw new Error('njPopover, hide, we can hide only showed popovers(probably animation is still running).');
 	}
 
 	var o = this.o,
 		that = this;
+
+	//fix for case, when we should run hide, before show animation finished(follow mode for example)
+	if(this._o.state === 'show') {
+		if(this._o.showTimeout) {
+			this.v.popover.removeClass('njp-show-'+this.o.animShow + ' '+ 'njp-shown-'+this.o.animShow);
+			clearTimeout(this._o.showTimeout);
+			delete this._o.showTimeout;
+		}
+	}
+
+	
 
 	if(this._cb_hide() === false) return;//callback hide
 
@@ -234,11 +246,9 @@ proto.hide = function (status) {
 
 		setTimeout(function(){
 			removePopover();
-			that._cb_hidden();
 		}, that._getMaxTransitionDuration(that.v.popover[0]))
 	} else {
 		removePopover();
-		this._cb_hidden();
 	}
 	
 	
@@ -261,6 +271,8 @@ proto.hide = function (status) {
 		delete that.v.viewport;
 
 		$(document).off('click.njp_out_'+that._o.ts);
+
+		that._cb_hidden();
 	}
 
 	return this;
@@ -429,7 +441,6 @@ proto.destroy = function () {
 
 	this._cb_destroy();
 
-
 	try {
 		this.hide();
 	} 
@@ -521,15 +532,15 @@ proto._setTrigger = function () {
 
 		if(hideEvent) {
 			o.$elem.on(hideEvent, function (e) {
-				if(o.trigger === 'hover') {
-					//if our popover loacated above trigger element, don't hide popover
-					if($(e.relatedTarget).closest('.njPopover').length) {
-						$(e.relatedTarget).closest('.njPopover').on(hideEvent, function () {
-							that.hide();
-						})
-						return;
-					}
-				}
+				// if(o.trigger === 'hover') {
+				// 	//if our popover loacated above trigger element, don't hide popover
+				// 	if($(e.relatedTarget).closest('.njPopover').length) {
+				// 		$(e.relatedTarget).closest('.njPopover').on(hideEvent, function () {
+				// 			that.hide();
+				// 		})
+				// 		return;
+				// 	}
+				// }
 				e.preventDefault();
 				that.hide();
 			})
@@ -591,11 +602,11 @@ proto._gatherData = function (first) {//first - only first, initial data gather
 		if(attrContent) o.content = attrContent;
 	}
 
-	if(dataMeta.anim) {
-		var tmp = dataMeta.anim.split(' ');
-		dataMeta.animShow = tmp[0];
-		(tmp[1]) ? dataMeta.animHide = tmp[1] : dataMeta.animHide = tmp[0];
-	}
+	// if(dataMeta.anim) {
+	// 	var tmp = dataMeta.anim.split(' ');
+	// 	dataMeta.animShow = tmp[0];
+	// 	(tmp[1]) ? dataMeta.animHide = tmp[1] : dataMeta.animHide = tmp[0];
+	// }
 
 	$.extend(true, o, dataMeta);
 }
@@ -709,7 +720,7 @@ njPopover.defaults = {
 	margin: 5,//(number) margin from element
 
 
-	template:'<div class="njp-wrap"><div class="njp"></div></div>',//(string) base HTML to use when creating the popover
+	template:'<div class="njp-wrap" data-njp-wrap style="position:absolute;"><div class="njp" data-njp></div></div>',//(string) base HTML to use when creating the popover
 	attr: 'title',//get content for popover from this attribute
 	type: 'text',//(text || html || selector) type of content, if selector used, whole element will be inserted in tooltip
 	content: '',//(string || function) content for popover
