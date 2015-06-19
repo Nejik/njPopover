@@ -9,7 +9,6 @@ var $ = window.jQuery || window.j;
 
 if(!$) {
 	throw new Error('njPopover,  requires jQuery or "j" library (https://github.com/Nejik/j)');
-	return false;
 }
 //constructor
 window.njPopover = function(opts) {
@@ -22,6 +21,20 @@ window.njPopover = function(opts) {
 	this._init(opts);
 	return this;
 };
+njPopover.instances = 	{//we make array like object with all active instances of plugin
+							length:0
+						}
+
+
+njPopover.getLast = function () {//public function that returns last instance of popup
+	return njPopover.instances[njPopover.instances.length - 1];
+}
+
+njPopover.hideLast = function (status) {//public function that close last instance of popup
+	if(njPopover.instances.length) njPopover.instances[njPopover.instances.length - 1].hide();
+}
+
+
 
 njPopover.forElement = function (elem) {//return instance
 	return $(elem)[0].njPopover;
@@ -34,7 +47,9 @@ proto._init = function (opts) {
 	var o = this.o = $.extend(true, {}, njPopover.defaults, opts),
 		that = this;
 
-	this._o = {'coords':{}};//inner options
+	this._o = {
+		'coords':{},
+	};//inner options
 
 	this.v = {//object with cached variables
 		html: $('html'),
@@ -47,7 +62,6 @@ proto._init = function (opts) {
 	if(o.elem) {
 		if(o.elem.njPopover) {
 			throw new Error('njPopover, can\'t be initialized again on this element.');
-			return;
 		}
 		this._gatherData(true);
 
@@ -58,12 +72,18 @@ proto._init = function (opts) {
 
 	this._setTrigger();
 
+
+	//remember instance id in this set, for deleting it when close (todo)
+	this._o.id = njPopover.instances.length;
+	//write instance to global set of all instances
+	Array.prototype.push.call(njPopover.instances, this);
+
+
 	this._cb_inited();
 }
 proto.show = function () {
 	if(this._o.state !== 'inited') {
 		throw new Error('njPopover, plugin not inited or in not inited state(probably animation is still running).');
-		return;
 	}
 	//todo: заготовка для аякса
 	// if(this._o.shown && opts) {
@@ -84,20 +104,17 @@ proto.show = function () {
 	if(typeof o.content === 'function') o.content = o.content.call(this);
 
 	if(!o.content || (typeof o.content !== 'string' && typeof o.content !== 'number')) {
-		throw new Error('njPopover, no content for popover.');
-		return;//don't show popover, if we have no content for popover
+		throw new Error('njPopover, no content for popover.');//don't show popover, if we have no content for popover
 	}
 
 	if(!o.elem && !o.coords) {
-		throw new Error('njPopover, no coords for showing.');
-		return;//don't show popover if we have no coords for showing
+		throw new Error('njPopover, no coords for showing.');//don't show popover if we have no coords for showing
 	}
 
 
 	this.v.container = $(o.container);
 	if(!this.v.container.length) {
-		throw new Error('njPopover, no container for popover.');
-		return;//don't do anything, if we have no container
+		throw new Error('njPopover, no container for popover.');//don't do anything, if we have no container
 	}
 
 	this.v.wrap = $(o.template).css({'position':'absolute'});
@@ -131,7 +148,6 @@ proto.show = function () {
 			this.v.popover.append(this._o.content);
 		} else {
 			throw new Error('njPopover, wrong content selector.');
-			return;
 		}
 	break;
 	}
@@ -169,10 +185,8 @@ proto.show = function () {
 	}
 
 
-	if(o.out) {
-		this._o.out = +new Date();
-
-		$(document).on('click.njp.njp_out_'+this._o.out, function (e) {
+	if(o.out && o.trigger !== 'follow') {
+		$(document).on('click.njp.njp_out_'+this._o.ts, function (e) {
 			var $el = $(e.target);
 
 			if(o.elem) {
@@ -203,10 +217,9 @@ proto.show = function () {
 	return this;
 }
 
-proto.hide = function () {
+proto.hide = function (status) {
 	if(this._o.state !== 'show' && this._o.state !== 'shown') {
 		throw new Error('njPopover, we can hide only showed popovers(probably animation is still running).');
-		return;
 	}
 
 	var o = this.o,
@@ -247,8 +260,7 @@ proto.hide = function () {
 		delete that.v.popover;
 		delete that.v.viewport;
 
-		$(document).off('click.njp_out_'+that._o.out);
-		delete that._o.out;
+		$(document).off('click.njp_out_'+that._o.ts);
 	}
 
 	return this;
@@ -412,30 +424,36 @@ proto.destroy = function () {
 	var o = this.o;
 
 	if(o.elem && !o.elem.njPopover) {
-		throw new Error('njPopover, nothing to destroy, plugin not initialized.');
-		return;//nothing to destroy, plugin not initialized
+		throw new Error('njPopover, nothing to destroy, plugin not initialized.');//nothing to destroy, plugin not initialized
 	}
 
-	console.log(this.v)
 	this._cb_destroy();
 
-	this.hide();
 
-	//remove all handlers
-	if(o.elem) o.$elem.off('.njp');
-	$(document).off('.njp');
+	try {
+		this.hide();
+	} 
+	finally {
+		//remove all handlers
+		if(o.elem) o.$elem.off('.njp');
+		$(document).off('.njp');
 
-	//restore attribute for element
-	if(this._o.origTitle) {
-		o.elem.setAttribute('title', this._o.origTitle);
-		delete this._o.origTitle;
+		//restore attribute for element
+		if(this._o.origTitle) {
+			o.elem.setAttribute('title', this._o.origTitle);
+			delete this._o.origTitle;
+		}
+
+		delete o.elem.njPopover;
+
+		delete njPopover.instances[this._o.id];
+		njPopover.instances.length--;
+
+		this._cb_destroyed();
+
+		return this;
 	}
-
-	delete o.elem.njPopover;
-
-	this._cb_destroyed();
-
-	return this;
+	
 }
 
 proto._setTrigger = function () {
@@ -728,8 +746,7 @@ $.fn.njPopover = function(options) {
 	var args = arguments;
 
 	if(!this.length) {
-		throw new Error('njPopover, there is no items in jQuery object.');
-		return;//exit if there is no items in jQuery object
+		throw new Error('njPopover, there is no items in jQuery object.');//exit if there is no items in jQuery object
 	}
 
 	if(!args.length) {//if we have no arguments at all
