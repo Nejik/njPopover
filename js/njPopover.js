@@ -187,7 +187,7 @@ proto.show = function () {
 
 
 	if(o.out && o.trigger !== 'follow') {
-		$(document).on('click.njp.njp_out_'+this._o.ts, function (e) {
+		$(document).on('click.njp.njp_out_'+this._o.id, function (e) {
 			var $el = $(e.target);
 
 			if(o.elem) {
@@ -270,7 +270,7 @@ proto.hide = function (status) {
 		delete that.v.popover;
 		delete that.v.viewport;
 
-		$(document).off('click.njp_out_'+that._o.ts);
+		$(document).off('click.njp_out_'+that._o.id);
 
 		that._cb_hidden();
 	}
@@ -464,7 +464,6 @@ proto.destroy = function () {
 
 		return this;
 	}
-	
 }
 
 proto._setTrigger = function () {
