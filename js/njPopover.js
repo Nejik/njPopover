@@ -16,6 +16,7 @@ window.njPopover = function(opts) {
 	opts = opts || {};
 
 	if(!(this instanceof njPopover)) {//when we call njPopover not as a contructor, make instance and call it
+		opts._iife = true;//flag that it is self-invoked call, if iife we destroy it in hide method
 		return new njPopover(opts).show();
 	}
 
@@ -95,7 +96,7 @@ proto.show = function () {
 
 	if(o.elem) this._gatherData();//update our settings
 
-	if(o.anim) {
+	if(o.anim) {//make animation names
 		var tmp = o.anim.split(' ');
 		o.animShow = tmp[0];
 		(tmp[1]) ? o.animHide = tmp[1] : o.animHide = tmp[0];
@@ -107,7 +108,7 @@ proto.show = function () {
 		throw new Error('njPopover, no content for popover.');//don't show popover, if we have no content for popover
 	}
 
-	if(!o.elem && !o.coords) {
+	if(!o.elem && !$.isArray(o.coords)) {
 		throw new Error('njPopover, no coords for showing.');//don't show popover if we have no coords for showing
 	}
 
@@ -235,8 +236,6 @@ proto.hide = function (status) {
 		}
 	}
 
-	
-
 	if(this._cb_hide() === false) return;//callback hide
 
 	if(o.animHide) {
@@ -273,6 +272,13 @@ proto.hide = function (status) {
 		$(document).off('click.njp_out_'+that._o.id);
 
 		that._cb_hidden();
+
+		if(that.o._iife) {
+			that.destroy();
+		}
+
+
+		console.log(njPopover.instances)
 	}
 
 	return this;
@@ -455,7 +461,7 @@ proto.destroy = function () {
 			delete this._o.origTitle;
 		}
 
-		delete o.elem.njPopover;
+		if(o.elem) delete o.elem.njPopover;
 
 		delete njPopover.instances[this._o.id];
 		njPopover.instances.length--;
@@ -600,12 +606,6 @@ proto._gatherData = function (first) {//first - only first, initial data gather
 
 		if(attrContent) o.content = attrContent;
 	}
-
-	// if(dataMeta.anim) {
-	// 	var tmp = dataMeta.anim.split(' ');
-	// 	dataMeta.animShow = tmp[0];
-	// 	(tmp[1]) ? dataMeta.animHide = tmp[1] : dataMeta.animHide = tmp[0];
-	// }
 
 	$.extend(true, o, dataMeta);
 }
