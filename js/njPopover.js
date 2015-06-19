@@ -62,7 +62,7 @@ proto._init = function (opts) {
 }
 proto.show = function () {
 	if(this._o.state !== 'inited') {
-		throw new Error('njPopover, plugin not inited.');
+		throw new Error('njPopover, plugin not inited or in not inited state(probably animation is still running).');
 		return;
 	}
 	//todo: заготовка для аякса
@@ -204,10 +204,11 @@ proto.show = function () {
 }
 
 proto.hide = function () {
-	if(this._o.state !== 'shown') {
-		throw new Error('njPopover, we can hide only showed popovers.');
+	if(this._o.state !== 'show' && this._o.state !== 'shown') {
+		throw new Error('njPopover, we can hide only showed popovers(probably animation is still running).');
 		return;
 	}
+
 	var o = this.o,
 		that = this;
 
@@ -449,7 +450,6 @@ proto._setTrigger = function () {
 		case 'click':
 			o.$elem.on('click.njp', function (e) {
 						e.preventDefault();
-
 						if(that._o.state === 'shown') {
 							that.hide();
 							return;
@@ -710,6 +710,8 @@ njPopover.defaults = {
 }
 
 })(window, document);
+
+
 
 //autobind
 $(document).on('DOMContentLoaded', function () {
