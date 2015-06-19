@@ -104,36 +104,7 @@ proto.show = function () {
 	this.v.wrap[0].njPopover = this;
 	(o.viewport === 'document') ? this.v.viewport = $(document) : this.v.viewport = $(o.viewport);
 
-	if(o.out) {
-		this._o.out = +new Date();
-
-		$(document).on('click.njp.njp_out_'+this._o.out, function (e) {
-			var $el = $(e.target);
-
-			if(o.elem) {
-				if(o.out === 'self') {
-					if($el[0] !== o.elem && !$el.closest('.njp-wrap').length) {
-						that.hide();
-					}
-				} else {
-					if($el[0] !== o.elem) {
-						that.hide();
-					}
-				}
-			} else {
-				if(o.out === 'self') {
-					if(!$el.closest('.njp-wrap').length) {
-						that.hide();
-					}
-				} else {
-					that.hide();
-				}
-			}
-			
-
-			
-		})
-	}
+	
 
 
 	//find element where we should set content
@@ -195,6 +166,38 @@ proto.show = function () {
 		}, that._getMaxTransitionDuration(this.v.popover[0]))
 	} else {
 		that._cb_shown();
+	}
+
+
+	if(o.out) {
+		this._o.out = +new Date();
+
+		$(document).on('click.njp.njp_out_'+this._o.out, function (e) {
+			var $el = $(e.target);
+
+			if(o.elem) {
+				if(o.out === 'self') {
+					if($el[0] !== o.elem && !$el.closest('.njp-wrap').length) {
+						that.hide();
+					}
+				} else {
+					if($el[0] !== o.elem) {
+						that.hide();
+					}
+				}
+			} else {
+				if(o.out === 'self') {
+					if(!$el.closest('.njp-wrap').length) {
+						that.hide();
+					}
+				} else {
+					that.hide();
+				}
+			}
+			
+
+			
+		})
 	}
 
 	return this;
