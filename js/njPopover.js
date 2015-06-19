@@ -95,7 +95,8 @@ proto.show = function () {
 	// 	//opts - передавать в arguments
 	// }
 	var o = this.o,
-			that = this;
+			that = this,
+			content;
 
 	if(o.elem) this._gatherData();//update our settings
 
@@ -105,9 +106,13 @@ proto.show = function () {
 		(tmp[1]) ? o.animHide = tmp[1] : o.animHide = tmp[0];
 	}
 
-	if(typeof o.content === 'function') o.content = o.content.call(this);
+	if(typeof o.content === 'function') {
+		content = o.content.call(this);
+	} else {
+		content = o.content;
+	}
 
-	if(!o.content || (typeof o.content !== 'string' && typeof o.content !== 'number')) {
+	if(!content || (typeof content !== 'string' && typeof content !== 'number')) {
 		throw new Error('njPopover, no content for popover.');//don't show popover, if we have no content for popover
 	}
 
@@ -135,13 +140,13 @@ proto.show = function () {
 	//set content
 	switch(o.type) {
 	case 'text':
-		this.v.popover.text(o.content)
+		this.v.popover.text(content)
 	break;
 	case 'html':
-		this.v.popover.html(o.content)
+		this.v.popover.html(content)
 	break;
 	case 'selector':
-		if(!this._o.content) this._o.content = $(o.content);
+		if(!this._o.content) this._o.content = $(content);
 
 		if(this._o.content.length) {
 			//make element visible
@@ -285,24 +290,26 @@ proto.setPosition = function (e) {
 		that = this,
 		coords;
 
-	if($.isArray(o.coords)) {
-		coords = o.coords;
-	} else if(typeof o.coords === 'function') {
-		coords = o.coords.call(this)
+	//case when we have no elem and should position popover via coordinates
+	if(!o.elem && o.coords) {
+		if($.isArray(o.coords)) {
+			coords = o.coords;
+		} else if(typeof o.coords === 'function') {
+			coords = o.coords.call(this)
+		}
+
+		if($.isArray(coords)) {
+			this.v.wrap.css({'left':coords[0]+'px',"top":coords[1]+'px'});
+
+			//remember proper coordinates
+			this._o.coords.popoverCoords = getCoords(this.v.wrap[0]);
+
+			this._cb_positioned();
+			return;
+		} else {
+			throw new Error('njPopover, final coords should be array, popover position is wrong.');
+		}
 	}
-
-	if($.isArray(coords)) {
-		this.v.wrap.css({'left':coords[0]+'px',"top":coords[1]+'px'});
-
-		//remember proper coordinates
-		this._o.coords.popoverCoords = getCoords(this.v.wrap[0]);
-
-		this._cb_positioned();
-		return;
-	} else {
-		throw new Error('njPopover, final coords should be array, popover position is wrong.');
-	}
-
 
 	var eC = this._o.coords.elemCoords = getCoords(o.elem),//trigger element coordinates
 		tC = this._o.coords.popoverCoords = getCoords(this.v.wrap[0]),//popover coordinates(coordinates now fake, from this var we need outerWidth/outerHeight)
