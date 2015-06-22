@@ -580,7 +580,7 @@ proto._gatherData = function (first) {//first - only first, initial data gather
 
 	//if we have data-njp-options, use it
 	if(dataO.njpOptions) {
-		dataMeta = JSON.parse(dataO.njpOptions);
+		dataMeta = $.parseJSON(dataO.njpOptions);
 
 		for (var key in dataMeta) {
 			if (dataMeta.hasOwnProperty(key)) {
