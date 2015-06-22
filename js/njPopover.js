@@ -16,7 +16,7 @@ window.njPopover = function(opts) {
 	opts = opts || {};
 
 	if(!(this instanceof njPopover)) {//when we call njPopover not as a contructor, make instance and call it
-		opts._iife = true;//flag that it is self-invoked call, if iife we destroy it in hide method
+		opts._iife = true;//flag that it is self-invoked call, if iife we destroy it, while hiding popover
 		return new njPopover(opts).show();
 	}
 
@@ -49,9 +49,9 @@ proto._init = function (opts) {
 	var o = this.o = $.extend(true, {}, njPopover.defaults, opts),
 		that = this;
 
-	this._o = {
+	this._o = {//inner options
 		'coords':{},
-	};//inner options
+	};
 
 	this.v = {//object with cached variables
 		html: $('html'),
@@ -71,6 +71,8 @@ proto._init = function (opts) {
 	} else {
 		o.trigger = false;//if we have no element, we should use manually show/hide
 	}
+
+
 
 	this._setTrigger();
 
@@ -569,19 +571,34 @@ proto._gatherData = function (first) {//first - only first, initial data gather
 	var o = this.o,
 		el = o.$elem,
 		dataO = el.data(),//data original
-		dataMeta = {};//data processed
+		dataMeta = {},//data processed
 
-	//get data from data attributes
-	for (var p in dataO) {//use only data properties with njp prefix
-		if (dataO.hasOwnProperty(p) && /^njp[A-Z]+/.test(p) ) {
-			var shortName = p.match(/^njp(.*)/)[1],
-				shortNameLowerCase = shortName.charAt(0).toLowerCase() + shortName.slice(1);
+		numeric = ['margin'],//properties that we should transform from string to number
+		initial = ['trigger','attr'],//properties that we can define only first time, on init gather data
+		banned = ['elem'];//properties that we can't redefine via data attributes at all
 
-			dataMeta[shortNameLowerCase] = checkval(dataO[p]);
+
+	//if we have data-njp-options, use it
+	if(dataO.njpOptions) {
+		dataMeta = JSON.parse(dataO.njpOptions);
+
+		for (var key in dataMeta) {
+			if (dataMeta.hasOwnProperty(key)) {
+				dataMeta[key] = checkval(dataMeta[key]);
+			}
+		}
+	} else {//get data from data attributes
+		for (var p in dataO) {//use only data properties with njp prefix
+			if (dataO.hasOwnProperty(p) && /^njp[A-Z]+/.test(p) ) {
+				var shortName = p.match(/^njp(.*)/)[1],
+					shortNameLowerCase = shortName.charAt(0).toLowerCase() + shortName.slice(1);
+
+				dataMeta[shortNameLowerCase] = checkval(dataO[p]);
+			}
 		}
 	}
 
-	function checkval(val) {//make boolean from string
+	function checkval(val) {//transform string to boolean
 		if(val === 'true') {
 			return true;
 		} else if(val === 'false') {
@@ -590,18 +607,23 @@ proto._gatherData = function (first) {//first - only first, initial data gather
 			return val;
 		}
 	}
-	//transform string with number to number type
-	if(dataMeta.margin) dataMeta.margin = parseInt(dataMeta.margin);
 
-	//properties we can't redefine
-	if(!first) {
-		delete dataMeta.trigger;
-		delete dataMeta.attr;
+	//transform string to number
+	for (var i = 0, l = numeric.length; i < l ;i++) {
+		if(dataMeta[numeric[i]]) dataMeta[numeric[i]] = parseInt(dataMeta[numeric[i]]);
 	}
 
-	//we can't define elem from data option
-	delete dataMeta.elem;
+	//delete options, that we can't redefine via data properties
+	for (var i = 0, l = banned.length; i < l ;i++) {
+		delete dataMeta[banned[i]];
+	}
 
+	//delete options, that we can only use on initial gather data
+	if(!first) {
+		for (var i = 0, l = initial.length; i < l ;i++) {
+			delete dataMeta[initial[i]];
+		}
+	}
 
 	if(o.attr) {
 		var attrContent;
@@ -619,7 +641,7 @@ proto._gatherData = function (first) {//first - only first, initial data gather
 		if(attrContent) o.content = attrContent;
 	}
 
-	$.extend(true, o, dataMeta);
+	$.extend(true, o, dataMeta);//extend original options with gathered
 }
 
 proto._getMaxTransitionDuration = function (el) {
@@ -646,9 +668,9 @@ proto._getMaxTransitionDuration = function (el) {
 
 //callbacks
 proto._cb_inited = function () {//cb - callback
-	var o = this.o;
-
 	this._o.state = 'inited';
+
+	var o = this.o;
 
 	$(document).triggerHandler('njp_inited', [this]);
 	if(o.$elem.length) o.$elem.triggerHandler('njp_inited', [this]);
