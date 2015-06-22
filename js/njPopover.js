@@ -67,6 +67,21 @@ proto._init = function (opts) {
 		}
 		this._gatherData(true);
 
+		if(o.attr) {
+			var attrContent;
+
+			if(o.attr === 'title') {
+				if(o.$elem.attr('title')) this._o.origTitle = o.$elem.attr('title');
+				
+				o.elem.removeAttribute('title');
+				attrContent = this._o.origTitle;
+			} else {
+				attrContent = o.$elem.attr(o.attr)
+			}
+
+			if(attrContent) o.content = attrContent;
+		}
+
 		o.elem.njPopover = this;
 	} else {
 		o.trigger = false;//if we have no element, we should use manually show/hide
@@ -623,22 +638,6 @@ proto._gatherData = function (first) {//first - only first, initial data gather
 		for (var i = 0, l = initial.length; i < l ;i++) {
 			delete dataMeta[initial[i]];
 		}
-	}
-
-	if(o.attr) {
-		var attrContent;
-
-		if(o.attr === 'title') {
-			// if(!this._o.origTitle)
-			if(el.attr('title')) this._o.origTitle = el.attr('title');
-			
-			o.elem.removeAttribute('title');
-			attrContent = this._o.origTitle;
-		} else {
-			attrContent = el.attr(o.attr)
-		}
-
-		if(attrContent) o.content = attrContent;
 	}
 
 	$.extend(true, o, dataMeta);//extend original options with gathered
