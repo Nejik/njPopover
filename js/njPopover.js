@@ -45,7 +45,6 @@ njPopover.forElement = function (elem) {//return instance
 var proto = njPopover.prototype;
 
 proto._init = function (opts) {
-	console.log(opts)
 	opts = opts || {};
 	var o = this.o = $.extend(true, {}, njPopover.defaults, opts),
 		that = this;
@@ -289,8 +288,11 @@ proto.hide = function (opts) {
 			that._o.content.css('display', 'none');
 			delete that._o.contentDisplayNone;
 		}
-		that.v.body.append(that._o.content);
-		delete that._o.content;
+
+		if(that._o.content) {
+			that.v.body.append(that._o.content);
+			delete that._o.content;
+		}
 
 		that.v.wrap.remove();
 		delete that._o.coords.popoverCoords;
@@ -529,9 +531,6 @@ proto._setTrigger = function () {
 		that = this;
 
 	if(o.trigger) {
-		var showEvent = '',
-			hideEvent = '';
-
 		switch(o.trigger) {
 		case 'click':
 			o.$elem.on('click.njp.njp_'+that._o.id, function (e) {
@@ -549,7 +548,6 @@ proto._setTrigger = function () {
 				//don't fire show event, when show mouse came from popover on element(case when popover not placed in container(document))
 				if(that.v.wrap && that.v.popover) {
 					if(e.relatedTarget !== that.v.wrap[0] && e.relatedTarget !== that.v.popover[0]) {
-						console.log('show')
 						that.show({e:e});
 					}
 				} else {
@@ -584,41 +582,52 @@ proto._setTrigger = function () {
 				that.hide();
 			})
 		break;
-
-
 		case 'hover':
-			showEvent = 'mouseenter.njp'
-			hideEvent = 'mouseleave.njp'
-		break;
-		
-		case 'focus':
-			showEvent = 'focus.njp'
-			hideEvent = 'blur.njp'
-		break;
-		
-		}
+			o.$elem.on('mouseenter.njp.njp_'+that._o.id, function (e) {
+				
+				//don't fire show event, when show mouse came from popover on element(case when popover not placed in container(document))
+				if(that.v.wrap && that.v.popover) {
+					if(e.relatedTarget !== that.v.wrap[0] && e.relatedTarget !== that.v.popover[0]) {
+						that.show({e:e});
+					}
+				} else {
+					that.show({e:e});
+				}
+			})
 
-		if(showEvent) {
-			o.$elem.on(showEvent, function (e) {
+			.on('mouseleave.njp.njp_'+that._o.id, function (e) {
+				//if our popover loacated above trigger element, don't hide popover
+				var wrap = $(e.relatedTarget).closest('[data-njp-wrap]');
+
+				if(wrap.length) {
+					wrap.on('mouseleave.njp.njp_'+that._o.id, function (e) {
+						if(e.relatedTarget !== o.elem) {
+							o.$elem.off('mousemove.njp.njp_'+that._o.id)
+							that.hide();
+
+							wrap.off('mouseleave.njp.njp_'+that._o.id);
+						}
+					})
+					return;
+				}
+
+
+
+				o.$elem.off('mousemove.njp.njp_'+that._o.id)
+				that.hide();
+			})
+		break;
+		case 'focus':
+			o.$elem.on('focus.njp.njp_'+that._o.id, function (e) {
 						that.show();
 						e.preventDefault();
 					})
-		}
-
-		if(hideEvent) {
-			o.$elem.on(hideEvent, function (e) {
-				// if(o.trigger === 'hover') {
-				// 	//if our popover loacated above trigger element, don't hide popover
-				// 	if($(e.relatedTarget).closest('.njPopover').length) {
-				// 		$(e.relatedTarget).closest('.njPopover').on(hideEvent, function () {
-				// 			that.hide();
-				// 		})
-				// 		return;
-				// 	}
-				// }
-				e.preventDefault();
-				that.hide();
-			})
+					.on('blur.njp.njp_'+that._o.id, function (e) {
+						that.hide();
+						e.preventDefault();
+					})
+		break;
+		
 		}
 	}
 }
@@ -802,7 +811,7 @@ njPopover.defaults = {
 
 	container: 'body',//(selector) appends the popover to a specific element
 	viewport: 'document',//(selector || false) keeps the popover within the bounds of this element
-	placement: 'top',//(top || bottom || left || right) how to position the popover
+	placement: 'bottom',//(top || bottom || left || right) how to position the popover
 	auto: true,//(boolean) this option dynamically reorient the popover. For example, if placement is "left", the popover will display to the left when possible, otherwise it will display right.
 
 	anim: 'scale',//(false || string) name of animation (see animation section)
