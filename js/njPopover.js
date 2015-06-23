@@ -142,7 +142,7 @@ proto.show = function (opts) {
 		throw new Error('njPopover, no container for popover.');//don't do anything, if we have no container
 	}
 
-	this.v.wrap = $(o.template).css({'position':'absolute'});
+	this.v.wrap = $(o.template).css({'position':'absolute','visibility':'hidden'});
 	this.v.wrap[0].njPopover = this;
 	(o.viewport === 'document') ? this.v.viewport = $(document) : this.v.viewport = $(o.viewport);
 
@@ -186,9 +186,9 @@ proto.show = function (opts) {
 
 	//initial position
 	if(opts && opts.e) {
-		that.setPosition({e:opts.e});
+		that.setPosition({init:true, e:opts.e});
 	} else {
-		that.setPosition();
+		that.setPosition({init:true});
 	}
 
 	if(o.animShow) {
@@ -320,57 +320,37 @@ proto.setPosition = function (opts) {
 
 	(typeof o.margin === 'number') ? o.margin = o.margin : o.margin = 0;
 
-
-	console.log(o.coords)
-	//if we have option with coordinates
+	//if we have option with coordinates, use this coords
 	if(o.coords) {
-		//case when we have coordinates
 		if(typeof o.coords === 'string') {
 			coords = o.coords.split(' ')
 		} else if(typeof o.coords === 'function') {
 			coords = o.coords.call(this).split(' ');
 		}
+		
+		if($.isArray(coords) && coords.length === 2 && isNumber(coords[0]) && isNumber(coords[1])) {
+			this.v.wrap.css({'left' : parseFloat(coords[0])+'px',"top" : parseFloat(coords[1])+'px'});
+			if(opts.init) this.v.wrap.css('visibility','visible');
 
-		console.log(coords)
+			//remember proper coordinates
+			this._o.coords.popoverCoords = getCoords(this.v.wrap[0]);
 
+			this._cb_positioned();
+		} else {
+			this.hide();
+			throw new Error('njPopover, final coords should be array, with 2 numbers, popover position is wrong, hide popover.');
+		}
 
+		function isNumber(n) {
+		  return !isNaN(parseFloat(n)) && isFinite(n);
+		}
 		return;	
 	}
 
 
-	
 
 
-
-	//case when we have no elem and should position popover via coordinates
-	// if(!o.elem && o.coords) {
-	// 	if(typeof o.coords === 'string') {
-	// 		coords = o.coords;
-	// 	} else if(typeof o.coords === 'function') {
-	// 		coords = o.coords.call(this)
-	// 	}
-
-	// 	if($.isArray(coords)) {
-	// 		this.v.wrap.css({'left':coords[0]+'px',"top":coords[1]+'px'});
-
-	// 		//remember proper coordinates
-	// 		this._o.coords.popoverCoords = getCoords(this.v.wrap[0]);
-
-	// 		this._cb_positioned();
-	// 		return;
-	// 	} else {
-	// 		throw new Error('njPopover, final coords should be array, popover position is wrong.');
-	// 	}
-	// }
-
-
-
-
-
-
-
-
-
+	//if we don't have o.coords, calculate position	
 	var eC = this._o.coords.elemCoords = getCoords(o.elem),//trigger element coordinates
 		tC = this._o.coords.popoverCoords = getCoords(this.v.wrap[0]),//popover coordinates(coordinates now fake, from this var we need outerWidth/outerHeight)
 
@@ -457,14 +437,6 @@ proto.setPosition = function (opts) {
 		if(top < minTop) top = minTop;
 		if(top > maxTop) top = maxTop;
 	}
-	
-
-	this.v.wrap.css({'left':left+'px',"top":top+'px'});
-
-	//remember proper coordinates
-	this._o.coords.popoverCoords = getCoords(this.v.wrap[0]);
-
-	this._cb_positioned();
 
 	function getCoords(elem) {
 		if(elem === document) {
@@ -505,6 +477,15 @@ proto.setPosition = function (opts) {
 			};
 		}
 	}
+	
+
+	this.v.wrap.css({'left':left+'px',"top":top+'px'});
+	if(opts.init) this.v.wrap.css('visibility','visible');
+
+	//remember proper coordinates
+	this._o.coords.popoverCoords = getCoords(this.v.wrap[0]);
+
+	this._cb_positioned();
 
 	return this;
 }
@@ -566,7 +547,17 @@ proto._setTrigger = function () {
 		break;
 		case 'follow':
 			o.$elem.on('mouseenter.njp.njp_'+that._o.id, function (e) {
-				that.show({e:e});
+				
+				//don't fire show event, when show mouse came from popover on element(case when popover not placed in container(document))
+				if(that.v.wrap && that.v.popover) {
+					if(e.relatedTarget !== that.v.wrap[0] && e.relatedTarget !== that.v.popover[0]) {
+						console.log('show')
+						that.show({e:e});
+					}
+				} else {
+					that.show({e:e});
+				}
+				
 
 				o.$elem.on('mousemove.njp.njp_'+that._o.id, function (e) {
 					that.setPosition({e:e});
@@ -574,19 +565,25 @@ proto._setTrigger = function () {
 			})
 			
 			.on('mouseleave.njp.njp_'+that._o.id, function (e) {
-
 				//if our popover loacated above trigger element, don't hide popover
-				// if($(e.relatedTarget).closest('.njPopover').length) {
-				// 	$(e.relatedTarget).closest('.njPopover').on('mouseleave.njp', function () {
-				// 		that.hide();
-				// 		$(document).off('mousemove.njp');
-				// 	})
-				// 	return;
-				// }
+				var wrap = $(e.relatedTarget).closest('[data-njp-wrap]');
+
+				if(wrap.length) {
+					wrap.on('mouseleave.njp.njp_'+that._o.id, function (e) {
+						if(e.relatedTarget !== o.elem) {
+							o.$elem.off('mousemove.njp.njp_'+that._o.id)
+							that.hide();
+
+							wrap.off('mouseleave.njp.njp_'+that._o.id);
+						}
+					})
+					return;
+				}
+
+
 
 				o.$elem.off('mousemove.njp.njp_'+that._o.id)
 				that.hide();
-				// $(document).off('mousemove.njp');
 			})
 		break;
 
