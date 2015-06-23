@@ -33,7 +33,7 @@ njPopover.instances = 	{//we make array like object with all active instances of
 njPopover.getLast = njPopover.last = function () {//public function that returns last instance of popover
 	return njPopover.instances[njPopover.instances.length - 1];
 }
-njPopover.hideLast = njPopover.hide = function (status) {//public function that close last instance of popover
+njPopover.hideLast = njPopover.hide = function () {//public function that close last instance of popover
 	if(njPopover.instances.length) return njPopover.instances[njPopover.instances.length - 1].hide();
 }
 njPopover.forElement = function (elem) {//return instance
@@ -45,6 +45,7 @@ njPopover.forElement = function (elem) {//return instance
 var proto = njPopover.prototype;
 
 proto._init = function (opts) {
+	console.log(opts)
 	opts = opts || {};
 	var o = this.o = $.extend(true, {}, njPopover.defaults, opts),
 		that = this;
@@ -87,8 +88,6 @@ proto._init = function (opts) {
 		o.trigger = false;//if we have no element, we should use manually show/hide
 	}
 
-	this._setTrigger();
-
 	//if it immidiatly invoked function, we shouldn't write it in global set of instances
 	if(o._iife) {
 		this._o.id = +new Date();
@@ -99,11 +98,14 @@ proto._init = function (opts) {
 		Array.prototype.push.call(njPopover.instances, this);
 	}
 
+	this._setTrigger();
+
 	this._cb_inited();
 }
-proto.show = function () {
+
+proto.show = function (opts) {
 	if(this._o.state !== 'inited') {
-		throw new Error('njPopover, show, plugin not inited or in not inited state(probably animation is still running).');
+		throw new Error('njPopover, show, plugin not inited or in not inited state(probably animation is still running or plugin already visible).');
 	}
 	//todo: заготовка для аякса
 	// if(this._o.shown && opts) {
@@ -134,7 +136,6 @@ proto.show = function () {
 	if(!o.elem && !o.coords) {
 		throw new Error('njPopover, no coords for showing.');//don't show popover if we have no coords for showing
 	}
-
 
 	this.v.container = $(o.container);
 	if(!this.v.container.length) {
@@ -181,17 +182,22 @@ proto.show = function () {
 
 	if(this._cb_show() === false) return;//callback show
 
-	this.v.container.append(this.v.wrap);
+	this.v.container.prepend(this.v.wrap);
 
-	that.setPosition();
+	//initial position
+	if(opts && opts.e) {
+		that.setPosition({e:opts.e});
+	} else {
+		that.setPosition();
+	}
 
 	if(o.animShow) {
-		//i don't know why, but elem.getBoundingClientRect used on elem stops any future transitions, thats why after position, we remove and insert elem again...
+		//i don't know why, but elem.getBoundingClientRect used on elem stops any future transitions(june 2015), thats why after position, we remove and insert elem again...
 		// this.v.wrap.remove();
 		// this.v.container.append(this.v.wrap);
 
 
-		//i don't know why, but elem.getBoundingClientRect used on elem stops any future transitions, thats why after position, we hides and show elem again
+		//i don't know why, but elem.getBoundingClientRect used on elem stops any future transitions(june 2015), thats why after position, we hides and show elem again
 		this.v.popover.css('display','none');
 		this.v.popover[0].clientHeight;//force relayout
 		this.v.popover.css('display','block');
@@ -204,7 +210,8 @@ proto.show = function () {
 			that.v.popover.removeClass('njp-show-'+that.o.animShow + ' '+ 'njp-shown-'+that.o.animShow);
 
 			that._cb_shown();
-		}, that._getMaxTransitionDuration(this.v.popover[0]))
+		}, that._getMaxTransitionDuration(this.v.popover[0]));
+
 	} else {
 		that._cb_shown();
 	}
@@ -242,7 +249,7 @@ proto.show = function () {
 	return this;
 }
 
-proto.hide = function (status) {
+proto.hide = function (opts) {
 	if(this._o.state !== 'show' && this._o.state !== 'shown') {
 		throw new Error('njPopover, hide, we can hide only showed popovers(probably animation is still running).');
 	}
@@ -252,8 +259,10 @@ proto.hide = function (status) {
 
 	//fix for case, when we should run hide, before show animation finished(follow mode for example)
 	if(this._o.state === 'show') {
-		if(this._o.showTimeout) {
+		if(this._o.showTimeout !== undefined) {
 			this.v.popover.removeClass('njp-show-'+this.o.animShow + ' '+ 'njp-shown-'+this.o.animShow);
+			that._cb_shown();
+
 			clearTimeout(this._o.showTimeout);
 			delete this._o.showTimeout;
 		}
@@ -300,31 +309,67 @@ proto.hide = function (status) {
 	return this;
 }
 
-proto.setPosition = function (e) {
+proto.setPosition = function (opts) {
+	// if(this._o.state !== 'shown' && opts.init !== true) {
+	// 	throw new Error('njPopover, position, you can\'t position popover, while it\'s animation or loading.');
+	// }
+
 	var o = this.o,
 		that = this,
 		coords;
 
-	//case when we have no elem and should position popover via coordinates
-	if(!o.elem && o.coords) {
-		if($.isArray(o.coords)) {
-			coords = o.coords;
+	(typeof o.margin === 'number') ? o.margin = o.margin : o.margin = 0;
+
+
+	console.log(o.coords)
+	//if we have option with coordinates
+	if(o.coords) {
+		//case when we have coordinates
+		if(typeof o.coords === 'string') {
+			coords = o.coords.split(' ')
 		} else if(typeof o.coords === 'function') {
-			coords = o.coords.call(this)
+			coords = o.coords.call(this).split(' ');
 		}
 
-		if($.isArray(coords)) {
-			this.v.wrap.css({'left':coords[0]+'px',"top":coords[1]+'px'});
+		console.log(coords)
 
-			//remember proper coordinates
-			this._o.coords.popoverCoords = getCoords(this.v.wrap[0]);
 
-			this._cb_positioned();
-			return;
-		} else {
-			throw new Error('njPopover, final coords should be array, popover position is wrong.');
-		}
+		return;	
 	}
+
+
+	
+
+
+
+	//case when we have no elem and should position popover via coordinates
+	// if(!o.elem && o.coords) {
+	// 	if(typeof o.coords === 'string') {
+	// 		coords = o.coords;
+	// 	} else if(typeof o.coords === 'function') {
+	// 		coords = o.coords.call(this)
+	// 	}
+
+	// 	if($.isArray(coords)) {
+	// 		this.v.wrap.css({'left':coords[0]+'px',"top":coords[1]+'px'});
+
+	// 		//remember proper coordinates
+	// 		this._o.coords.popoverCoords = getCoords(this.v.wrap[0]);
+
+	// 		this._cb_positioned();
+	// 		return;
+	// 	} else {
+	// 		throw new Error('njPopover, final coords should be array, popover position is wrong.');
+	// 	}
+	// }
+
+
+
+
+
+
+
+
 
 	var eC = this._o.coords.elemCoords = getCoords(o.elem),//trigger element coordinates
 		tC = this._o.coords.popoverCoords = getCoords(this.v.wrap[0]),//popover coordinates(coordinates now fake, from this var we need outerWidth/outerHeight)
@@ -332,15 +377,15 @@ proto.setPosition = function (e) {
 		left,
 		top;
 
-	if(o.viewport && this.v.viewport.length) {
+	if(this.v.viewport.length) {
 		var vC = this._o.coords.viewportCoords = getCoords(this.v.viewport[0]);//viewport coordinates
 	}
 
 
 	if(o.trigger === 'follow') {
-		if(e) {
-			left = e.pageX + o.margin;
-			top = e.pageY + o.margin;
+		if(opts.e) {
+			left = opts.e.pageX + o.margin;
+			top = opts.e.pageY + o.margin;
 		}
 	} else {
 		findCoords.call(this, o.placement);
@@ -373,7 +418,7 @@ proto.setPosition = function (e) {
 		//reorient position if no space for popover for this placement
 		if(o.auto && !reorient) {
 			var docCoords;
-			if(this.v.viewport && this.v.viewport.length) {
+			if(this.v.viewport.length) {
 				docCoords = vC;
 			} else {
 				docCoords = getCoords(document);
@@ -412,6 +457,7 @@ proto.setPosition = function (e) {
 		if(top < minTop) top = minTop;
 		if(top > maxTop) top = maxTop;
 	}
+	
 
 	this.v.wrap.css({'left':left+'px',"top":top+'px'});
 
@@ -509,36 +555,38 @@ proto._setTrigger = function () {
 
 		switch(o.trigger) {
 		case 'click':
-			o.$elem.on('click.njp', function (e) {
+			o.$elem.on('click.njp.njp_'+that._o.id, function (e) {
 						e.preventDefault();
 						if(that._o.state === 'shown') {
 							that.hide();
 							return;
 						}
 						that.show()
-
 					})
-
 		break;
 		case 'follow':
-			o.$elem.on('mouseenter.njp', function (e) {
-						that.show();
-						$(document).off('mousemove.njp').on('mousemove.njp', function (e) {
-							that.setPosition(e);
-						})
-					})
-			.on('mouseleave.njp', function (e) {
-					//if our popover loacated above trigger element, don't hide popover
-					if($(e.relatedTarget).closest('.njPopover').length) {
-						$(e.relatedTarget).closest('.njPopover').on('mouseleave.njp', function () {
-							that.hide();
-							$(document).off('mousemove.njp');
-						})
-						return;
-					}
+			o.$elem.on('mouseenter.njp.njp_'+that._o.id, function (e) {
+				that.show({e:e});
 
+				o.$elem.on('mousemove.njp.njp_'+that._o.id, function (e) {
+					that.setPosition({e:e});
+				})
+			})
+			
+			.on('mouseleave.njp.njp_'+that._o.id, function (e) {
+
+				//if our popover loacated above trigger element, don't hide popover
+				// if($(e.relatedTarget).closest('.njPopover').length) {
+				// 	$(e.relatedTarget).closest('.njPopover').on('mouseleave.njp', function () {
+				// 		that.hide();
+				// 		$(document).off('mousemove.njp');
+				// 	})
+				// 	return;
+				// }
+
+				o.$elem.off('mousemove.njp.njp_'+that._o.id)
 				that.hide();
-				$(document).off('mousemove.njp');
+				// $(document).off('mousemove.njp');
 			})
 		break;
 
@@ -807,7 +855,7 @@ $.fn.njPopover = function(options) {
 				var instance = this.njPopover;
 
 				if (instance instanceof njPopover && typeof instance[options] === 'function') {
-				    returns = instance[options].apply( instance, Array.prototype.slice.call( args, 1 ) );
+					returns = instance[options].apply( instance, Array.prototype.slice.call( args, 1 ) );
 				}
 			})
 		} else {
@@ -818,7 +866,8 @@ $.fn.njPopover = function(options) {
 	} else {//if we have arguments
 		return this.each(function () {
 			if(typeof options === 'object') {//we have options passed in arguments, init plugin with this options
-				new njPopover({elem:this})
+				options.elem = this;
+				new njPopover(options);
 			}
 			//shortcuts for different methods, this not works, just example
 			// else if(typeof options === 'number') {//we have number in arguments, it is shortcut for .show(number) method

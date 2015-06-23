@@ -5,8 +5,6 @@
 <!--[if IE 9]>         <html class="no-js ie ie9 lte-ie9 lt-ie10"> <![endif]-->
 <!--[if gt IE 9]><!--> <html class="no-js"> <!--<![endif]-->
 	<head>
-		
-		
 		<meta charset="utf-8">
 		<meta http-equiv="X-UA-Compatible" content="IE=edge">
 		<meta name="viewport" content="width=device-width, initial-scale=1">
@@ -56,19 +54,14 @@
 
 		.njp-show-scale {
 			opacity: 0;
-			-webkit-transition: 100ms;
-			-o-transition: 100ms;
-			transition: 100ms;
+			-webkit-transition: 150ms;
+			-o-transition: 150ms;
+			transition: 150ms;
 			-webkit-transform: scale(0.5);
 			-ms-transform: scale(0.5);
 			-o-transform: scale(0.5);
 			transform: scale(0.5);
 		
-			-webkit-transition-timing-function: cubic-bezier(0.175, 0.885, 0.320, 1); /* older webkit */
-			-webkit-transition-timing-function: cubic-bezier(0.175, 0.885, 0.320, 1.275);
-			   -moz-transition-timing-function: cubic-bezier(0.175, 0.885, 0.320, 1.275);
-			     -o-transition-timing-function: cubic-bezier(0.175, 0.885, 0.320, 1.275);
-			        transition-timing-function: cubic-bezier(0.175, 0.885, 0.320, 1.275); /* easeOutBack */
 		}
 		.njp-shown-scale {
 			opacity: 1;
@@ -80,19 +73,14 @@
 		}
 		.njp-hide-scale {
 			opacity: 1;
-			-webkit-transition: 100ms;
-			-o-transition: 100ms;
-			transition: 100ms;
+			-webkit-transition: 150ms;
+			-o-transition: 150ms;
+			transition: 150ms;
 			-webkit-transform: scale(1);
 			-ms-transform: scale(1);
 			-o-transform: scale(1);
 			transform: scale(1);
 		
-			-webkit-transition-timing-function: cubic-bezier(0.600, 0, 0.735, 0.045); /* older webkit */
-			-webkit-transition-timing-function: cubic-bezier(0.600, -0.280, 0.735, 0.045);
-			   -moz-transition-timing-function: cubic-bezier(0.600, -0.280, 0.735, 0.045);
-			     -o-transition-timing-function: cubic-bezier(0.600, -0.280, 0.735, 0.045);
-			        transition-timing-function: cubic-bezier(0.600, -0.280, 0.735, 0.045); /* easeInBack */
 		}
 		.njp-hidden-scale {
 			opacity: 0;
@@ -100,6 +88,25 @@
 			-ms-transform: scale(0.5);
 			-o-transform: scale(0.5);
 			transform: scale(0.5);
+		}
+
+
+		.njp-show-fade {
+			opacity: 0;
+			-webkit-transition: 100ms;
+			-o-transition: 100ms;
+			transition: 100ms;
+		}
+		.njp-shown-fade {
+			opacity: 1;
+		}
+		.njp-hide-fade {
+			-webkit-transition: 100ms;
+			-o-transition: 100ms;
+			transition: 100ms;
+		}
+		.njp-hidden-fade {
+			opacity: 0;
 		}
 
 
@@ -113,7 +120,11 @@
 		<!-- <div>Lorem ipsum dolor sit amet, consectetur adipisicing elit. Quae aliquam quo accusantium dolore aspernatur, reprehenderit tenetur error ipsum suscipit neque unde impedit? Aliquid omnis, corporis id odit magni molestias tenetur aspernatur numquam unde, expedita laboriosam quisquam fugit quod molestiae alias, deleniti in reiciendis ratione sunt, ea voluptatem iste rem. Odit nisi repellat alias est tempore consequuntur, ipsam voluptas, laboriosam aliquid ducimus? Laboriosam rem quaerat et, ad sit iste quia assumenda illo laborum unde fugit optio accusamus placeat iusto temporibus facere voluptate, repellat dolorem! Earum minima consequuntur quia sed excepturi quidem sequi, sunt in corporis? Optio vero voluptate autem minima amet accusamus eligendi voluptas. Inventore accusantium minus, odio, nostrum asperiores sequi magnam ipsam voluptatem in, qui beatae aspernatur, commodi unde recusandae. Id itaque adipisci, perferendis pariatur ipsum doloremque soluta quibusdam, atque illum magni labore vel enim fugit. Magni nobis eaque quae, neque asperiores cum impedit in velit, consequuntur itaque tempore at! Libero id fugit omnis corporis iusto ut dolore. Harum modi fugiat dolorem possimus quas nesciunt placeat minus, accusamus iste magni mollitia, explicabo assumenda dicta, quam facilis iusto delectus ipsum. Atque assumenda veniam deserunt saepe animi hic ipsa, iste molestiae excepturi est sit perferendis explicabo laborum quas aperiam nemo recusandae dolorum. -->
 		<ul>
 			<!-- <li style="padding:200px;"><span data-toggle="popover" title="popoverHtmlText" data-njp-trigger="click">, reprehenderit tenetur error ipsum suscipit neque unde impedit? Aliquid o</span></li> -->
-			<li style="padding:200px;"><span data-toggle="popover" title="popoverHtmlText" title2="popoverHtmlText 2" data-njp-options='{"trigger":"hover","out":"false","margin":"10","attr":"data-njp-options"}'>, reprehenderit tenetur error ipsum suscipit neque unde impedit? Aliquid o</span></li>
+			<li style="padding:20px;">
+				<div class="testpop" title="popoverHtmlText" title2="popoverHtmlText 2" data-njp-trigger="follow" data-njp-anim="fade">
+					Lorem ipsum dolor sit amet, consectetur adipisicing elit. Totam optio quasi, ab eos dolores minus ducimus, quam reiciendis suscipit? Fuga reiciendis maxime nesciunt ducimus omnis expedita eligendi sit ratione suscipit itaque optio adipisci, saepe rerum mollitia nobis corporis sint error! Ipsum eaque deleniti voluptas dolores incidunt, perspiciatis labore velit libero minus consequuntur blanditiis non architecto. Adipisci repellat pariatur tenetur commodi in nemo quaerat tempora modi natus. Deserunt alias, neque odit facilis vero sit provident! Pariatur tempora, in esse distinctio accusamus quasi ducimus eius neque harum aperiam hic placeat qui veritatis nisi, quisquam aspernatur nesciunt! Quibusdam quis illo in, minima doloribus.
+				</div>
+			</li>
 			<!-- <li><span data-toggle="popover" title="title2">test2</span></li> -->
 		</ul>
 		
@@ -134,6 +145,13 @@
 		
 
 		<script>
+			$('.testpop').njPopover({
+				coords: function () {
+					return '200 200'
+				}
+			});
+
+
 			// var t = $('.popover1').njPopover();
 			// new njPopover({
 			// 	elem: '.popover1',
