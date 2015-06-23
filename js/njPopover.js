@@ -161,7 +161,8 @@ proto.show = function (opts) {
 		this.v.popover.html(content)
 	break;
 	case 'selector':
-		if(!this._o.content) this._o.content = $(content);
+		// if(!this._o.content) 
+		this._o.content = $(content);
 
 		if(this._o.content.length) {
 			//make element visible
@@ -183,6 +184,14 @@ proto.show = function (opts) {
 
 	this.v.container.prepend(this.v.wrap);
 
+
+
+	//we put init class before position, because positioning uses elem.getBoundingClientRect, that will make reflow for us
+	if(o.animShow) {
+		this.v.popover.addClass('njp-show-'+this.o.animShow);
+		this.v.popover[0].clientHeight;//force relayout
+	}
+
 	//initial position
 	if(opts && opts.e) {
 		that.setPosition({init:true, e:opts.e});
@@ -191,18 +200,23 @@ proto.show = function (opts) {
 	}
 
 	if(o.animShow) {
+		//for now we don't need code below, because we add init anim class before positioning, that will make reflow for us
 		//i don't know why, but elem.getBoundingClientRect used on elem stops any future transitions(june 2015), thats why after position, we remove and insert elem again...
+		//this one is working in all browsers including ie
 		// this.v.wrap.remove();
-		// this.v.container.append(this.v.wrap);
+		// this.v.container.prepend(this.v.wrap);
 
 
 		//i don't know why, but elem.getBoundingClientRect used on elem stops any future transitions(june 2015), thats why after position, we hides and show elem again
-		this.v.popover.css('display','none');
-		this.v.popover[0].clientHeight;//force relayout
-		this.v.popover.css('display','block');
+		//this on is working in not ie browsers
+		// this.v.popover.css('display','none');
+		// this.v.popover[0].clientHeight;//force relayout
+		// this.v.popover.css('display','block');
 
-		this.v.popover.addClass('njp-show-'+this.o.animShow);
-		this.v.popover[0].clientHeight;//force relayout
+
+
+		// this.v.popover.addClass('njp-show-'+this.o.animShow);
+		// this.v.popover[0].clientHeight;//force relayout
 		this.v.popover.addClass('njp-shown-'+this.o.animShow);
 
 		this._o.showTimeout = setTimeout(function(){
