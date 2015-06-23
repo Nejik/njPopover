@@ -543,45 +543,6 @@ proto._setTrigger = function () {
 					})
 		break;
 		case 'follow':
-			o.$elem.on('mouseenter.njp.njp_'+that._o.id, function (e) {
-				
-				//don't fire show event, when show mouse came from popover on element(case when popover not placed in container(document))
-				if(that.v.wrap && that.v.popover) {
-					if(e.relatedTarget !== that.v.wrap[0] && e.relatedTarget !== that.v.popover[0]) {
-						that.show({e:e});
-					}
-				} else {
-					that.show({e:e});
-				}
-				
-
-				o.$elem.on('mousemove.njp.njp_'+that._o.id, function (e) {
-					that.setPosition({e:e});
-				})
-			})
-			
-			.on('mouseleave.njp.njp_'+that._o.id, function (e) {
-				//if our popover loacated above trigger element, don't hide popover
-				var wrap = $(e.relatedTarget).closest('[data-njp-wrap]');
-
-				if(wrap.length) {
-					wrap.on('mouseleave.njp.njp_'+that._o.id, function (e) {
-						if(e.relatedTarget !== o.elem) {
-							o.$elem.off('mousemove.njp.njp_'+that._o.id)
-							that.hide();
-
-							wrap.off('mouseleave.njp.njp_'+that._o.id);
-						}
-					})
-					return;
-				}
-
-
-
-				o.$elem.off('mousemove.njp.njp_'+that._o.id)
-				that.hide();
-			})
-		break;
 		case 'hover':
 			o.$elem.on('mouseenter.njp.njp_'+that._o.id, function (e) {
 				
@@ -593,8 +554,14 @@ proto._setTrigger = function () {
 				} else {
 					that.show({e:e});
 				}
+				
+				if(o.trigger === 'follow') {
+					o.$elem.on('mousemove.njp.njp_'+that._o.id, function (e) {
+						that.setPosition({e:e});
+					})
+				}
 			})
-
+			
 			.on('mouseleave.njp.njp_'+that._o.id, function (e) {
 				//if our popover loacated above trigger element, don't hide popover
 				var wrap = $(e.relatedTarget).closest('[data-njp-wrap]');
@@ -602,7 +569,7 @@ proto._setTrigger = function () {
 				if(wrap.length) {
 					wrap.on('mouseleave.njp.njp_'+that._o.id, function (e) {
 						if(e.relatedTarget !== o.elem) {
-							o.$elem.off('mousemove.njp.njp_'+that._o.id)
+							if(o.trigger === 'follow') o.$elem.off('mousemove.njp.njp_'+that._o.id)
 							that.hide();
 
 							wrap.off('mouseleave.njp.njp_'+that._o.id);
@@ -613,7 +580,7 @@ proto._setTrigger = function () {
 
 
 
-				o.$elem.off('mousemove.njp.njp_'+that._o.id)
+				if(o.trigger === 'follow') o.$elem.off('mousemove.njp.njp_'+that._o.id)
 				that.hide();
 			})
 		break;
