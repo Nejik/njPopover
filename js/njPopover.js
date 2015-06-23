@@ -87,8 +87,6 @@ proto._init = function (opts) {
 		o.trigger = false;//if we have no element, we should use manually show/hide
 	}
 
-
-
 	this._setTrigger();
 
 	//if it immidiatly invoked function, we shouldn't write it in global set of instances
@@ -590,7 +588,7 @@ proto._gatherData = function (first) {//first - only first, initial data gather
 
 		numeric = ['margin'],//properties that we should transform from string to number
 		initial = ['trigger','attr'],//properties that we can define only first time, on init gather data
-		banned = ['elem'];//properties that we can't redefine via data attributes at all
+		banned = ['elem','autobind'];//properties that we can't redefine via data attributes at all
 
 
 	//if we have data-njp-options, use it
