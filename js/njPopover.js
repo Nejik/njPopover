@@ -340,13 +340,11 @@ proto.setPosition = function (opts) {
 			this.hide();
 			throw new Error('njPopover, final coords should be array, with 2 numbers, popover position is wrong, hide popover.');
 		}
-
-		function isNumber(n) {
-		  return !isNaN(parseFloat(n)) && isFinite(n);
-		}
 		return;	
 	}
-
+	function isNumber(n) {
+	  return !isNaN(parseFloat(n)) && isFinite(n);
+	}
 
 
 
