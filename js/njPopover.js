@@ -553,7 +553,7 @@ proto._setTrigger = function () {
 				
 				//don't fire show event, when show mouse came from popover on element(case when popover not placed in container(document))
 				if(that.v.wrap && that.v.popover) {
-					if(e.relatedTarget !== that.v.wrap[0] && e.relatedTarget !== that.v.popover[0]) {
+					if($(e.relatedTarget).closest('[data-njp-wrap]').length) {
 						that.show({e:e});
 					}
 				} else {
