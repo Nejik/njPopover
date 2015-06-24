@@ -103,6 +103,7 @@ proto._init = function (opts) {
 }
 
 proto.show = function (opts) {
+	opts = opts || {};
 	if(this._o.state !== 'inited') {
 		throw new Error('njPopover, show, plugin not inited or in not inited state(probably animation is still running or plugin already visible).');
 	}
@@ -184,14 +185,6 @@ proto.show = function (opts) {
 
 	this.v.container.prepend(this.v.wrap);
 
-
-
-	//we put init class before position, because positioning uses elem.getBoundingClientRect, that will make reflow for us
-	if(o.animShow) {
-		this.v.popover.addClass('njp-show-'+this.o.animShow);
-		this.v.popover[0].clientHeight;//force relayout
-	}
-
 	//initial position
 	if(opts && opts.e) {
 		that.setPosition({init:true, e:opts.e});
@@ -200,23 +193,19 @@ proto.show = function (opts) {
 	}
 
 	if(o.animShow) {
-		//for now we don't need code below, because we add init anim class before positioning, that will make reflow for us
-		//i don't know why, but elem.getBoundingClientRect used on elem stops any future transitions(june 2015), thats why after position, we remove and insert elem again...
-		//this one is working in all browsers including ie
+		//i don't know why, but elem.getBoundingClientRect used on elem stops any future transitions(june 2015), thats why after position, we hides and show elem again,
+		// also working next method:
 		// this.v.wrap.remove();
 		// this.v.container.prepend(this.v.wrap);
 
+		//this on is working in all browsers
+		this.v.wrap.css('display','none');
+		this.v.wrap[0].clientHeight;//force relayout
+		this.v.wrap.css('display','block');
+		
 
-		//i don't know why, but elem.getBoundingClientRect used on elem stops any future transitions(june 2015), thats why after position, we hides and show elem again
-		//this on is working in not ie browsers
-		// this.v.popover.css('display','none');
-		// this.v.popover[0].clientHeight;//force relayout
-		// this.v.popover.css('display','block');
-
-
-
-		// this.v.popover.addClass('njp-show-'+this.o.animShow);
-		// this.v.popover[0].clientHeight;//force relayout
+		this.v.popover.addClass('njp-show-'+this.o.animShow);
+		this.v.popover[0].clientHeight;//force relayout
 		this.v.popover.addClass('njp-shown-'+this.o.animShow);
 
 		this._o.showTimeout = setTimeout(function(){
@@ -263,6 +252,7 @@ proto.show = function (opts) {
 }
 
 proto.hide = function (opts) {
+	opts = opts || {};
 	if(this._o.state !== 'show' && this._o.state !== 'shown') {
 		throw new Error('njPopover, hide, we can hide only showed popovers(probably animation is still running).');
 	}
@@ -326,6 +316,7 @@ proto.hide = function (opts) {
 }
 
 proto.setPosition = function (opts) {
+	opts = opts || {};
 	// if(this._o.state !== 'shown' && opts.init !== true) {
 	// 	throw new Error('njPopover, position, you can\'t position popover, while it\'s animation or loading.');
 	// }
