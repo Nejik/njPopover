@@ -148,7 +148,7 @@ proto.show = function (opts) {
 	if(o.zindex) this.v.wrap.css({'zIndex':o.zindex});
 
 	this.v.wrap[0].njPopover = this;
-	(o.viewport === 'document') ? this.v.viewport = $(document) : this.v.viewport = $(o.viewport);
+	(o.viewport === 'document') ? this.v.viewport = this.v.document : this.v.viewport = $(o.viewport);
 
 	
 
@@ -224,7 +224,7 @@ proto.show = function (opts) {
 
 
 	if(o.out && o.trigger !== 'follow') {
-		$(document).on('click.njp.njp_out_'+this._o.id, function (e) {
+		this.v.document.on('click.njp.njp_out_'+this._o.id, function (e) {
 			var $el = $(e.target);
 
 			if(o.elem) {
@@ -315,7 +315,7 @@ proto.hide = function (opts) {
 		delete that.v.popover;
 		delete that.v.viewport;
 
-		$(document).off('click.njp_out_'+that._o.id);
+		this.v.document.off('click.njp_out_'+that._o.id);
 
 		that._cb_hidden();
 	}
@@ -520,7 +520,7 @@ proto.destroy = function () {
 	finally {
 		//remove all handlers
 		if(o.elem) o.$elem.off('.njp');
-		$(document).off('.njp');
+		this.v.document.off('.njp');
 
 		//restore attribute for element
 		if(this._o.origTitle) {
@@ -745,7 +745,7 @@ proto._cb_inited = function () {//cb - callback
 
 	var o = this.o;
 
-	$(document).triggerHandler('njp_inited', [this]);
+	this.v.document.triggerHandler('njp_inited', [this]);
 	if(o.$elem.length) o.$elem.triggerHandler('njp_inited', [this]);
 	if(typeof o.init === 'function') o.init.call(this);
 }
@@ -754,14 +754,14 @@ proto._cb_show = function () {
 	
 	var o = this.o;
 
-	$(document).trigger('njp_show', [this.v.wrap[0], this]);
+	this.v.document.trigger('njp_show', [this.v.wrap[0], this]);
 	if(o.$elem.length) o.$elem.triggerHandler('njp_show', [this.v.wrap[0], this]);	
 	if(typeof o.show === 'function') return o.show.call(this, this.v.wrap[0]);
 }
 proto._cb_positioned = function () {
 	var o = this.o;
 
-	$(document).triggerHandler('njp_positioned', [this.v.wrap[0], this]);
+	this.v.document.triggerHandler('njp_positioned', [this.v.wrap[0], this]);
 	if(o.$elem.length) o.$elem.triggerHandler('njp_positioned', [this.v.wrap[0], this]);
 	if(typeof o.positioned === 'function') o.positioned.call(this, this.v.wrap[0]);
 }
@@ -770,7 +770,7 @@ proto._cb_shown = function () {
 
 	var o = this.o;
 
-	$(document).triggerHandler('njp_shown', [this.v.wrap[0], this]);
+	this.v.document.triggerHandler('njp_shown', [this.v.wrap[0], this]);
 	if(o.$elem.length) o.$elem.triggerHandler('njp_shown', [this.v.wrap[0], this]);	
 	if(typeof o.shown === 'function') o.shown.call(this, this.v.wrap[0]);
 }
@@ -779,7 +779,7 @@ proto._cb_hide = function () {
 
 	var o = this.o;
 
-	$(document).triggerHandler('njp_hide', [this.v.wrap[0], this]);
+	this.v.document.triggerHandler('njp_hide', [this.v.wrap[0], this]);
 	if(o.$elem.length) o.$elem.triggerHandler('njp_hide', [this.v.wrap[0], this]);	
 	if(typeof o.hide === 'function') o.hide.call(this, this.v.wrap[0]);
 }
@@ -788,14 +788,14 @@ proto._cb_hidden = function () {
 
 	var o = this.o;
 	
-	$(document).triggerHandler('njp_hidden', [this]);
+	this.v.document.triggerHandler('njp_hidden', [this]);
 	if(o.$elem.length) o.$elem.triggerHandler('njp_hidden', [this]);	
 	if(typeof o.hidden === 'function') o.hidden.call(this);
 }
 proto._cb_destroy = function () {
 	var o = this.o;
 	
-	$(document).triggerHandler('njp_destroy', [this]);
+	this.v.document.triggerHandler('njp_destroy', [this]);
 	if(o.$elem.length) o.$elem.triggerHandler('njp_destroy', [this]);	
 	if(typeof o.destroy === 'function') o.destroy.call(this);
 }
@@ -804,7 +804,7 @@ proto._cb_destroyed = function () {
 
 	var o = this.o;
 	
-	$(document).triggerHandler('njp_destroyed', [this]);
+	this.v.document.triggerHandler('njp_destroyed', [this]);
 	if(o.$elem.length) o.$elem.triggerHandler('njp_destroyed', [this]);	
 	if(typeof o.destroyed === 'function') o.destroyed.call(this);
 }
