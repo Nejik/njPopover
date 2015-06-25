@@ -30,12 +30,12 @@ njPopover.instances =	{//we make array like object with all active instances of 
 						}
 
 
-// njPopover.getLast = njPopover.last = function () {//public function that returns last instance of popover
-// 	return njPopover.instances[njPopover.instances.length - 1];
-// }
-// njPopover.hideLast = njPopover.hide = function () {//public function that close last instance of popover
-// 	if(njPopover.instances.length) return njPopover.instances[njPopover.instances.length - 1].hide();
-// }
+njPopover.getLast = njPopover.last = function () {//public function that returns last instance of popover
+	return njPopover.instances[njPopover.instances.length - 1];
+}
+njPopover.hideLast = njPopover.hide = function () {//public function that close last instance of popover
+	if(njPopover.instances.length) return njPopover.instances[njPopover.instances.length - 1].hide();
+}
 njPopover.forElement = function (elem) {//return instance
 	return $(elem)[0].njPopover;
 }
@@ -207,6 +207,7 @@ proto.show = function (opts) {
 		this.v.popover.addClass('njp-shown-'+this.o.animShow);
 
 		this._o.showTimeout = setTimeout(function(){
+			delete that._o.showTimeout;
 			that.v.popover.removeClass('njp-show-'+that.o.animShow + ' '+ 'njp-shown-'+that.o.animShow);
 
 			that._cb_shown();
@@ -302,6 +303,8 @@ proto.hide = function (opts) {
 
 		that.v.wrap.remove();
 		delete that._o.coords.popoverCoords;
+		delete that._o.coords.elemCoords;
+		delete that._o.coords.viewportCoords;
 
 		//delete all variables, because they generated new on every show
 		delete that.v.container;
