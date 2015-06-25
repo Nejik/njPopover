@@ -55,6 +55,7 @@ proto._init = function (opts) {
 
 	this.v = {//object with cached variables
 		document: $(document),
+		window: $(window),
 		html: $('html'),
 		body: $('body')
 	};
@@ -251,6 +252,10 @@ proto.show = function (opts) {
 		})
 	}
 
+	this.v.window.on('resize.njp.njp_'+this._o.id, function () {
+		that.setPosition();
+	})
+
 	return this;
 }
 
@@ -288,7 +293,7 @@ proto.hide = function (opts) {
 		removePopover();
 	}
 	
-	
+	this.v.window.off('resize.njp.njp_'+this._o.id);
 
 	function removePopover() {
 		if(that._o.contentDisplayNone) {
@@ -374,6 +379,8 @@ proto.setPosition = function (opts) {
 		if(opts.e) {
 			left = opts.e.pageX + o.margin;
 			top = opts.e.pageY + o.margin;
+		} else {
+			return;//we can't do anything, if there is no event with coordinates on follow mode
 		}
 	} else {
 		findCoords.call(this, o.placement);
