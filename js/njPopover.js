@@ -144,6 +144,8 @@ proto.show = function (opts) {
 	}
 
 	this.v.wrap = $(o.template).css({'position':'absolute','visibility':'hidden'});
+	if(o.zindex) this.v.wrap.css({'zIndex':o.zindex});
+
 	this.v.wrap[0].njPopover = this;
 	(o.viewport === 'document') ? this.v.viewport = $(document) : this.v.viewport = $(o.viewport);
 
@@ -608,7 +610,7 @@ proto._gatherData = function (first) {//first - only first, initial data gather
 		dataO = el.data(),//data original
 		dataMeta = {},//data processed
 
-		numeric = ['margin'],//properties that we should transform from string to number
+		numeric = ['margin','zindex'],//properties that we should transform from string to number
 		initial = ['trigger','attr'],//properties that we can define only first time, on init gather data
 		banned = ['elem','autobind'];//properties that we can't redefine via data attributes at all
 
@@ -783,6 +785,7 @@ njPopover.defaults = {
 	viewport: 'document',//(selector || false) keeps the popover within the bounds of this element
 	placement: 'bottom',//(top || bottom || left || right) how to position the popover
 	auto: true,//(boolean) this option dynamically reorient the popover. For example, if placement is "left", the popover will display to the left when possible, otherwise it will display right.
+	zindex: false,//(boolean false || number) zindex that will be set on popover
 
 	anim: 'scale',//(false || string) name of animation (see animation section)
 	// waitImg: true//if we have img in popover with [data-njp-img="true"], wait until img begin downloading(to know it's size), only than show tooltip
