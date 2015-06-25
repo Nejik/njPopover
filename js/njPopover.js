@@ -89,15 +89,10 @@ proto._init = function (opts) {
 		o.trigger = false;//if we have no element, we should use manually show/hide
 	}
 
-	//if it immidiatly invoked function, we shouldn't write it in global set of instances
-	if(o._iife) {
-		this._o.id = +new Date();
-	} else {
-		//remember instance id in this set, for deleting it when close (todo)
-		this._o.id = njPopover.instances.length;
-		//write instance to global set of all instances
-		Array.prototype.push.call(njPopover.instances, this);
-	}
+	//remember instance id in this set, for deleting it when close (todo)
+	this._o.id = njPopover.instances.length;
+	//write instance to global set of all instances
+	Array.prototype.push.call(njPopover.instances, this);
 
 	this._setTrigger();
 
@@ -319,6 +314,7 @@ proto.hide = function (opts) {
 		that._cb_hidden();
 	}
 
+	if(o._iife) this.destroy();
 	return this;
 }
 
@@ -529,10 +525,8 @@ proto.destroy = function () {
 
 		if(o.elem) delete o.elem.njPopover;
 
-		if(!o._iife) {
-			delete njPopover.instances[this._o.id];
-			njPopover.instances.length--;
-		}
+		delete njPopover.instances[this._o.id];
+		njPopover.instances.length--;
 
 		this._cb_destroyed();
 
