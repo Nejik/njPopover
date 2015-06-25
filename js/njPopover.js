@@ -336,8 +336,6 @@ proto.setPosition = function (opts) {
 
 	(typeof o.margin === 'number') ? o.margin = o.margin : o.margin = 0;
 
-
-
 	//if we have option with coordinates, use this coords
 	if(opts.coords) {
 		if(typeof opts.coords === 'string') {
@@ -356,7 +354,7 @@ proto.setPosition = function (opts) {
 			this._cb_positioned();
 		} else {
 			this.hide();
-			throw new Error('njPopover, final coords should be array, with 2 numbers, popover position is wrong, hide popover.');
+			throw new Error('njPopover, final coords should be string with 2 numbers, popover position is wrong, hide popover.');
 		}
 		return;	
 	}
@@ -612,6 +610,7 @@ proto._setTrigger = function () {
 		this._o.trigger = o.trigger;
 	}
 }
+
 proto._removeTrigger = function () {
 	var  o = this.o;
 
@@ -631,6 +630,7 @@ proto._removeTrigger = function () {
 		o.$elem.off('blur.njp.njp_'+this._o.id);
 	break;
 	}
+	delete this._o.trigger;
 }
 
 proto._gatherData = function (first) {//first - only first, initial data gather
@@ -693,6 +693,31 @@ proto._gatherData = function (first) {//first - only first, initial data gather
 
 	$.extend(true, o, dataMeta);//extend original options with gathered
 }
+
+proto.setOptions = function (opts) {
+	if(!opts) return;
+
+	var o = this.o,
+		banned = ['elem','autobind'];
+
+	if(this._o.origTitle) banned.push('attr');//if we already use title, we can't redefine it
+
+	if(this._o.trigger) {
+		this._removeTrigger();
+		this.o.trigger = opts.trigger;
+		this._setTrigger();
+	}
+
+	//delete options, that we can't redefine
+	for (var i = 0, l = banned.length; i < l ;i++) {
+		delete opts[banned[i]];
+	}
+
+
+	this.o = $.extend(true, this.o, opts);
+
+	return this;
+};
 
 proto._getMaxTransitionDuration = function (el) {
 	var el = $(el),
