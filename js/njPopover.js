@@ -698,9 +698,7 @@ proto.setOptions = function (opts) {
 	if(!opts) return;
 
 	var o = this.o,
-		banned = ['elem','autobind'];
-
-	if(this._o.origTitle) banned.push('attr');//if we already use title, we can't redefine it
+		banned = ['elem','autobind','attr'];
 
 	if(this._o.trigger) {
 		this._removeTrigger();
