@@ -154,7 +154,6 @@ proto.show = function (opts) {
 
 
 	//find element where we should set content
-	// this.v.popover = this.v.wrap.find('.njp')
 	this.v.popover = this.v.wrap.find('[data-njp]')
 
 	//set content
@@ -178,7 +177,7 @@ proto.show = function (opts) {
 
 			this.v.popover.append(this._o.content);
 		} else {
-			throw new Error('njPopover, wrong content selector.');
+			throw new Error('njPopover, wrong content selector or no such element.');
 		}
 	break;
 	}
@@ -315,7 +314,7 @@ proto.hide = function (opts) {
 		delete that.v.popover;
 		delete that.v.viewport;
 
-		this.v.document.off('click.njp_out_'+that._o.id);
+		that.v.document.off('click.njp_out_'+that._o.id);
 
 		that._cb_hidden();
 	}
@@ -541,6 +540,29 @@ proto.destroy = function () {
 	}
 }
 
+proto.setOptions = function (opts) {
+	if(!opts) return;
+
+	var o = this.o,
+		banned = ['elem','autobind','attr'];
+
+	if(this._o.trigger) {
+		this._removeTrigger();
+		this.o.trigger = opts.trigger;
+		this._setTrigger();
+	}
+
+	//delete options, that we can't redefine
+	for (var i = 0, l = banned.length; i < l ;i++) {
+		delete opts[banned[i]];
+	}
+
+
+	this.o = $.extend(true, this.o, opts);
+
+	return this;
+}
+
 proto._setTrigger = function () {
 	var o = this.o,
 		that = this;
@@ -694,29 +716,6 @@ proto._gatherData = function (first) {//first - only first, initial data gather
 	$.extend(true, o, dataMeta);//extend original options with gathered
 }
 
-proto.setOptions = function (opts) {
-	if(!opts) return;
-
-	var o = this.o,
-		banned = ['elem','autobind','attr'];
-
-	if(this._o.trigger) {
-		this._removeTrigger();
-		this.o.trigger = opts.trigger;
-		this._setTrigger();
-	}
-
-	//delete options, that we can't redefine
-	for (var i = 0, l = banned.length; i < l ;i++) {
-		delete opts[banned[i]];
-	}
-
-
-	this.o = $.extend(true, this.o, opts);
-
-	return this;
-};
-
 proto._getMaxTransitionDuration = function (el) {
 	var el = $(el),
 		str,
@@ -732,7 +731,6 @@ proto._getMaxTransitionDuration = function (el) {
 
 	return Math.max.apply(Math, arr)*1000;
 }
-
 
 
 
