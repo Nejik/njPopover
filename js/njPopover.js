@@ -30,12 +30,12 @@ njPopover.instances = 	{//we make array like object with all active instances of
 						}
 
 
-njPopover.getLast = njPopover.last = function () {//public function that returns last instance of popover
-	return njPopover.instances[njPopover.instances.length - 1];
-}
-njPopover.hideLast = njPopover.hide = function () {//public function that close last instance of popover
-	if(njPopover.instances.length) return njPopover.instances[njPopover.instances.length - 1].hide();
-}
+// njPopover.getLast = njPopover.last = function () {//public function that returns last instance of popover
+// 	return njPopover.instances[njPopover.instances.length - 1];
+// }
+// njPopover.hideLast = njPopover.hide = function () {//public function that close last instance of popover
+// 	if(njPopover.instances.length) return njPopover.instances[njPopover.instances.length - 1].hide();
+// }
 njPopover.forElement = function (elem) {//return instance
 	return $(elem)[0].njPopover;
 }
@@ -317,6 +317,7 @@ proto.hide = function (opts) {
 
 proto.setPosition = function (opts) {
 	opts = opts || {};
+	if(!this.v.wrap) return;//we can't set position of element, if there is no popover...
 	// if(this._o.state !== 'shown' && opts.init !== true) {
 	// 	throw new Error('njPopover, position, you can\'t position popover, while it\'s animation or loading.');
 	// }
@@ -352,7 +353,6 @@ proto.setPosition = function (opts) {
 	function isNumber(n) {
 	  return !isNaN(parseFloat(n)) && isFinite(n);
 	}
-
 
 
 	//if we don't have o.coords, calculate position	
@@ -553,7 +553,7 @@ proto._setTrigger = function () {
 				
 				//don't fire show event, when show mouse came from popover on element(case when popover not placed in container(document))
 				if(that.v.wrap && that.v.popover) {
-					if($(e.relatedTarget).closest('[data-njp-wrap]').length) {
+					if(!$(e.relatedTarget).closest('[data-njp-wrap]').length) {
 						that.show({e:e});
 					}
 				} else {
@@ -561,7 +561,7 @@ proto._setTrigger = function () {
 				}
 				
 				if(o.trigger === 'follow') {
-					o.$elem.on('mousemove.njp.njp_'+that._o.id, function (e) {
+					$(document).on('mousemove.njp.njp_'+that._o.id, function (e) {
 						that.setPosition({e:e});
 					})
 				}
@@ -585,7 +585,7 @@ proto._setTrigger = function () {
 
 
 
-				if(o.trigger === 'follow') o.$elem.off('mousemove.njp.njp_'+that._o.id)
+				if(o.trigger === 'follow') $(document).off('mousemove.njp.njp_'+that._o.id)
 				that.hide();
 			})
 		break;
