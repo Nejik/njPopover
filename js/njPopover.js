@@ -191,9 +191,9 @@ proto.show = function (opts) {
 
 	//initial position
 	if(opts && opts.e) {
-		that.setPosition({init:true, e:opts.e});
+		that.setPosition({init:true, e:opts.e, coords: o.coords});
 	} else {
-		that.setPosition({init:true});
+		that.setPosition({init:true, coords: o.coords});
 	}
 
 	if(o.animShow) {
@@ -336,12 +336,14 @@ proto.setPosition = function (opts) {
 
 	(typeof o.margin === 'number') ? o.margin = o.margin : o.margin = 0;
 
+
+
 	//if we have option with coordinates, use this coords
-	if(o.coords) {
-		if(typeof o.coords === 'string') {
-			coords = o.coords.split(' ')
-		} else if(typeof o.coords === 'function') {
-			coords = o.coords.call(this).split(' ');
+	if(opts.coords) {
+		if(typeof opts.coords === 'string') {
+			coords = opts.coords.split(' ')
+		} else if(typeof opts.coords === 'function') {
+			coords = opts.coords.call(this).split(' ');
 		}
 		
 		if($.isArray(coords) && coords.length === 2 && isNumber(coords[0]) && isNumber(coords[1])) {
@@ -584,7 +586,7 @@ proto._setTrigger = function () {
 				if(wrap.length) {
 					wrap.on('mouseleave.njp.njp_'+that._o.id, function (e) {
 						if(e.relatedTarget !== o.elem) {
-							if(o.trigger === 'follow') o.$elem.off('mousemove.njp.njp_'+that._o.id)
+							if(o.trigger === 'follow') that.v.document.off('mousemove.njp.njp_'+that._o.id)
 							that.hide();
 
 							wrap.off('mouseleave.njp.njp_'+that._o.id);
@@ -606,8 +608,28 @@ proto._setTrigger = function () {
 						e.preventDefault();
 					})
 		break;
-		
 		}
+		this._o.trigger = o.trigger;
+	}
+}
+proto._removeTrigger = function () {
+	var  o = this.o;
+
+	if(!this._o.trigger) return;
+
+	switch(this._o.trigger) {
+	case 'click':
+		o.$elem.off('click.njp.njp_'+this._o.id);
+	break;
+	case 'follow':
+	case 'hover':
+		o.$elem.off('mouseenter.njp.njp_'+this._o.id);
+		o.$elem.off('mouseleave.njp.njp_'+this._o.id);
+	break;
+	case 'focus':
+		o.$elem.off('focus.njp.njp_'+this._o.id);
+		o.$elem.off('blur.njp.njp_'+this._o.id);
+	break;
 	}
 }
 
