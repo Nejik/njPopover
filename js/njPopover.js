@@ -583,9 +583,6 @@ proto._setTrigger = function () {
 					})
 					return;
 				}
-
-
-
 				if(o.trigger === 'follow') that.v.document.off('mousemove.njp.njp_'+that._o.id)
 				that.hide();
 			})
