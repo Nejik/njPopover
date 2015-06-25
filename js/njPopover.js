@@ -25,7 +25,7 @@ window.njPopover = function(opts) {
 };
 
 //global settings/methods
-njPopover.instances = 	{//we make array like object with all active instances of plugin
+njPopover.instances =	{//we make array like object with all active instances of plugin
 							length:0
 						}
 
@@ -754,7 +754,7 @@ proto._cb_show = function () {
 	
 	var o = this.o;
 
-	this.v.document.trigger('njp_show', [this.v.wrap[0], this]);
+	this.v.document.triggerHandler('njp_show', [this.v.wrap[0], this]);
 	if(o.$elem.length) o.$elem.triggerHandler('njp_show', [this.v.wrap[0], this]);	
 	if(typeof o.show === 'function') return o.show.call(this, this.v.wrap[0]);
 }
