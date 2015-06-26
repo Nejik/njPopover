@@ -180,46 +180,108 @@ proto.show = function (opts) {
 	break;
 	}
 
-	//toDo waitImg
 
 	if(this._cb_show() === false) return;//callback show
 
-	this.v.container.prepend(this.v.popover);
 
-	//initial position
-	if(opts && opts.e) {
-		that.setPosition({init:true, e:opts.e, coords: o.coords});
+	//wait images(see descripton of o.imgs)
+	if(typeof o.imgs === 'string') {
+		var imgs = this.v.popover.find(o.imgs),
+			length = imgs.length,
+			readyImgs = 0;
+
+		if(length) {
+			imgs.each(function (i, el) {
+				findImgSize(el);
+			})
+		} else {
+			insertPopover.call(this);
+		}
 	} else {
-		that.setPosition({init:true, coords: o.coords});
+		insertPopover.call(this);
 	}
 
-	if(o.animShow) {
-		//i don't know why, but elem.getBoundingClientRect used on elem stops any future transitions(june 2015), thats why after position, we hides and show elem again,
-		// also working next method:
-		// this.v.popover.remove();
-		// this.v.container.prepend(this.v.popover);
+	function findImgSize(img) {
+		var counter = 0,
+			interval,
+			clonedImg = new Image();
 
-		//this is working in all browsers
-		this.v.popover.css('display','none');
-		this.v.popover[0].clientHeight;//force relayout
-		this.v.popover.css('display','block');
-		
+		clonedImg.src = img.src;
 
-		this.v.inner.addClass('njp-show-'+this.o.animShow);
-		this.v.inner[0].clientHeight;//force relayout
-		this.v.inner.addClass('njp-shown-'+this.o.animShow);
+		var njmSetInterval = function(delay) {
+			if(interval) {
+				clearInterval(interval);
+			}
+			interval = setInterval(function() {
+				if(clonedImg.width > 0) {
+					++readyImgs;
 
-		this._o.showTimeout = setTimeout(function(){
-			delete that._o.showTimeout;
-			that.v.inner.removeClass('njp-show-'+that.o.animShow + ' '+ 'njp-shown-'+that.o.animShow);
+					if(readyImgs === length) {
+						insertPopover.call(that);
+					}
 
+					clearInterval(interval);
+					return;
+				}
+
+				if(counter > 200) {
+					clearInterval(interval);
+				}
+
+				counter++;
+				if(counter === 3) {
+					njmSetInterval(10);
+				} else if(counter === 40) {
+					njmSetInterval(50);
+				} else if(counter === 100) {
+					njmSetInterval(500);
+				}
+			}, delay);
+		};
+		njmSetInterval(1);
+	}
+
+
+
+
+	
+	function insertPopover() {
+		this.v.container.prepend(this.v.popover);
+
+		//initial position
+		if(opts && opts.e) {
+			that.setPosition({init:true, e:opts.e, coords: o.coords});
+		} else {
+			that.setPosition({init:true, coords: o.coords});
+		}
+
+		if(o.animShow) {
+			//i don't know why, but elem.getBoundingClientRect used on elem stops any future transitions(june 2015), thats why after position, we hides and show elem again,
+			// also working next method:
+			// this.v.popover.remove();
+			// this.v.container.prepend(this.v.popover);
+
+			//this is working in all browsers
+			this.v.popover.css('display','none');
+			this.v.popover[0].clientHeight;//force relayout
+			this.v.popover.css('display','block');
+			
+
+			this.v.inner.addClass('njp-show-'+this.o.animShow);
+			this.v.inner[0].clientHeight;//force relayout
+			this.v.inner.addClass('njp-shown-'+this.o.animShow);
+
+			this._o.showTimeout = setTimeout(function(){
+				delete that._o.showTimeout;
+				that.v.inner.removeClass('njp-show-'+that.o.animShow + ' '+ 'njp-shown-'+that.o.animShow);
+
+				that._cb_shown();
+			}, that._getMaxTransitionDuration(this.v.inner[0]));
+
+		} else {
 			that._cb_shown();
-		}, that._getMaxTransitionDuration(this.v.inner[0]));
-
-	} else {
-		that._cb_shown();
+		}
 	}
-
 
 	if(o.out && o.trigger !== 'follow') {
 		this.v.document.on('click.njp.njp_out_'+this._o.id, function (e) {
@@ -308,9 +370,9 @@ proto.hide = function (opts) {
 
 		//delete all variables, because they generated new on every show
 		delete that.v.container;
+		delete that.v.viewport;
 		delete that.v.popover;
 		delete that.v.inner;
-		delete that.v.viewport;
 
 		that.v.document.off('click.njp_out_'+that._o.id);
 
@@ -835,7 +897,9 @@ njPopover.defaults = {
 	zindex: false,//(boolean false || number) zindex that will be set on popover
 
 	anim: 'scale',//(false || string) name of animation (see animation section)
-	// waitImg: true//if we have img in popover with [data-njp-img="true"], wait until img begin downloading(to know it's size), only than show tooltip
+
+	// load: '',//(html) html of element that will be 
+	imgs: '[data-njp-img]',//(boolean false || selector) if imgs selector is presented, plugin will find imags matches to this selector in popup, and wait until they begin downloading(to know it's size), only than show popover 
 
 	autobind: '[data-toggle="popover"]'//(selector) selector that will be used for autobind
 }
