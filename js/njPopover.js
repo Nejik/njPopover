@@ -244,27 +244,6 @@ proto.show = function (opts) {
 					that.hide();
 				}
 			}
-
-
-			// if(o.elem) {
-			// 	if(o.out === 'self') {
-			// 		if($el[0] !== o.elem && !$el.closest('[data-njp-popover]').length) {
-			// 			that.hide();
-			// 		}
-			// 	} else {
-			// 		if($el[0] !== o.elem) {
-			// 			that.hide();
-			// 		}
-			// 	}
-			// } else {
-			// 	if(o.out === 'self') {
-			// 		if(!$el.closest('[data-njp-popover]').length) {
-			// 			that.hide();
-			// 		}
-			// 	} else {
-			// 		that.hide();
-			// 	}
-			// }
 		})
 	}
 
@@ -795,9 +774,9 @@ proto._cb_hide = function () {
 
 	var o = this.o;
 
-	this.v.document.triggerHandler('njp_hide', [this.v.popover[0], this]);
-	if(o.$elem.length) o.$elem.triggerHandler('njp_hide', [this.v.popover[0], this]);	
-	if(typeof o.hide === 'function') o.hide.call(this, this.v.popover[0]);
+	this.v.document.triggerHandler('njp_hide', [this]);
+	if(o.$elem.length) o.$elem.triggerHandler('njp_hide', [this]);	
+	if(typeof o.hide === 'function') o.hide.call(this);
 }
 proto._cb_hidden = function () {
 	this._o.state = 'inited';
