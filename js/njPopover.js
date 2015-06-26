@@ -149,7 +149,10 @@ proto.show = function (opts) {
 
 
 	//find element where we should set content
-	this.v.inner = this.v.popover.find('[data-njp-inner]')
+	this.v.inner = this.v.popover.find('[data-njp-inner]');
+	if(!this.v.inner.length) {
+		throw new Error('njPopover, there is no element [data-njp-inner].');
+	}
 
 	//set content
 	switch(o.type) {
@@ -196,7 +199,7 @@ proto.show = function (opts) {
 		// this.v.popover.remove();
 		// this.v.container.prepend(this.v.popover);
 
-		//this on is working in all browsers
+		//this is working in all browsers
 		this.v.popover.css('display','none');
 		this.v.popover[0].clientHeight;//force relayout
 		this.v.popover.css('display','block');
@@ -223,27 +226,45 @@ proto.show = function (opts) {
 			var $el = $(e.target);
 
 			if(o.elem) {
-				if(o.out === 'self') {
+				if(o.out === true) {
 					if($el[0] !== o.elem && !$el.closest('[data-njp-popover]').length) {
 						that.hide();
 					}
-				} else {
+				} else if(o.out === 'all') {
 					if($el[0] !== o.elem) {
 						that.hide();
 					}
 				}
 			} else {
-				if(o.out === 'self') {
+				if(o.out === true) {
 					if(!$el.closest('[data-njp-popover]').length) {
 						that.hide();
 					}
-				} else {
+				} else if(o.out === 'all') {
 					that.hide();
 				}
 			}
-			
 
-			
+
+			// if(o.elem) {
+			// 	if(o.out === 'self') {
+			// 		if($el[0] !== o.elem && !$el.closest('[data-njp-popover]').length) {
+			// 			that.hide();
+			// 		}
+			// 	} else {
+			// 		if($el[0] !== o.elem) {
+			// 			that.hide();
+			// 		}
+			// 	}
+			// } else {
+			// 	if(o.out === 'self') {
+			// 		if(!$el.closest('[data-njp-popover]').length) {
+			// 			that.hide();
+			// 		}
+			// 	} else {
+			// 		that.hide();
+			// 	}
+			// }
 		})
 	}
 
@@ -817,7 +838,7 @@ njPopover.defaults = {
 	// coords: [],//(array with 2 numbers) X/Y coordinates for positioning popover. Used only when call popover without elem.
 
 	trigger: 'click',//(false || click || hover || focus || follow) how popover is triggered. false - manual triggering
-	out: 'self',//(boolean || self) click outside popover will close it, if self is selected, click on popover will not close popover
+	out: true,//(boolean || all) click outside popover will close it, if all is selected click on popover will hide it
 	margin: 5,//(number) margin from element
 
 
