@@ -200,6 +200,10 @@ proto.show = function (opts) {
 
 		if(length) {
 			imgs.each(function (i, el) {
+				if(o.imgsspinner) {
+					insertPopover.call(that);
+					that.loading('on');
+				}
 				findImgSize(el);
 			})
 		} else {
@@ -225,7 +229,11 @@ proto.show = function (opts) {
 					++readyImgs;
 
 					if(readyImgs === length) {
-						insertPopover.call(that);
+						if(o.imgsspinner) {
+							that.loading('off');
+						} else {
+							insertPopover.call(that);
+						}
 					}
 
 					clearInterval(interval);
@@ -326,7 +334,7 @@ proto.loading = function (state, content) {
 	switch(state) {
 	case 'on':
 		if(this._o.state === 'inited') throw new Error('njPopover, you should first show popover.');
-		if(this._o.state === 'loading') throw new Error('njPopover, popover already in loading state');
+		if(this._o.loading) throw new Error('njPopover, popover already in loading state');
 		//insert content from arguments
 		if(content) {
 			if(typeof content === 'string' || typeof content === 'number') {
@@ -344,7 +352,7 @@ proto.loading = function (state, content) {
 		this._cb_loading();
 	break;
 	case 'off':
-		if(this._o.state !== 'loading') throw new Error('njPopover, popover not in loading state.');
+		if(!this._o.loading) throw new Error('njPopover, popover not in loading state.');
 		if(content) {
 			if(typeof content === 'string' || typeof content === 'number') {
 				this.v.inner.html(content);
@@ -905,8 +913,7 @@ proto._cb_hidden = function () {
 }
 
 proto._cb_loading = function () {
-	this._o.origState = this._o.state;
-	this._o.state = 'loading';
+	this._o.loading = true;
 
 	var o = this.o;
 	
@@ -916,8 +923,7 @@ proto._cb_loading = function () {
 }
 
 proto._cb_loaded = function () {
-	this._o.state = this._o.origState;
-	delete this._o.origState;
+	delete this._o.loading;
 
 	var o = this.o;
 	
@@ -976,8 +982,9 @@ njPopover.defaults = {
 
 	anim: 'scale',//(false || string) name of animation (see animation section)
 
-	load: '<b><i>loading</i></b>',//(html) html of element that will be used as content for loading status
-	imgs: '[data-njp-img]',//(boolean false || selector) if imgs selector is presented, plugin will find imags matches to this selector in popup, and wait until they begin downloading(to know it's size), only than show popover 
+	load: '<img src="img/spinner.gif" alt="loading" />',//(html) html of element that will be used as content for loading status
+	imgs: '[data-njp-img]',//(boolean false || selector) if imgs selector is presented, plugin will find images matches to this selector in popover, and wait until they begin downloading(to know it's size), only than show popover 
+	imgsspinner: true,//(boolean) if imgs option is used, this option options instead of delay, show spinner or loading text in popover
 
 	autobind: '[data-toggle~="popover"]'//(selector) selector that will be used for autobind
 }
