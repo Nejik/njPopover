@@ -125,6 +125,7 @@ proto.show = function (opts) {
 	} else {
 		content = o.content;
 	}
+	this._o.content = content;//save computed content (needed for loading)
 
 	if(!content || (typeof content !== 'string' && typeof content !== 'number')) {
 		throw new Error('njPopover, no content for popover.');//don't show popover, if we have no content for popover
@@ -140,11 +141,18 @@ proto.show = function (opts) {
 	}
 
 	this.v.popover = $(o.template).css({'position':'absolute','visibility':'hidden'});
+	if(!this.v.popover.length) {
+		throw new Error('njPopover, wrong o.template.');
+	}
 	if(o.zindex) this.v.popover.css({'zIndex':o.zindex});
+
 
 	this.v.popover[0].njPopover = this;
 	(o.viewport === 'document') ? this.v.viewport = this.v.document : this.v.viewport = $(o.viewport);
 
+	if(!this.v.viewport.length) {
+		this.v.viewport = this.v.document
+	}
 	
 
 
@@ -312,9 +320,56 @@ proto.show = function (opts) {
 	return this;
 }
 
+proto.loading = function (state, content) {
+	var o = this.o;
+
+	switch(state) {
+	case 'on':
+		if(this._o.state === 'inited') throw new Error('njPopover, you should first show popover.');
+		if(this._o.state === 'loading') throw new Error('njPopover, popover already in loading state');
+		//insert content from arguments
+		if(content) {
+			if(typeof content === 'string' || typeof content === 'number') {
+				this.v.inner.html(content);
+			} else if(content.nodeType) {
+				this.v.inner.append($(content))
+			} else {
+				throw new Error('njPopover, smth wrong with argument content.');
+			}
+		} else if(o.load) {
+			this.v.inner.html(o.load);
+		}
+		this.setPosition({coords: o.coords});
+
+		this._cb_loading();
+	break;
+	case 'off':
+		if(this._o.state !== 'loading') throw new Error('njPopover, popover not in loading state.');
+		if(content) {
+			if(typeof content === 'string' || typeof content === 'number') {
+				this.v.inner.html(content);
+			} else if(content.nodeType) {
+				this.v.inner.append($(content))
+			} else {
+				throw new Error('njPopover, smth wrong with argument content.');
+			}
+		} else if(this._o.contentEl) {//return orig content
+			this.v.inner.html('');
+			this.v.inner.append(this._o.contentEl);
+		} else if(this._o.content) {
+			this.v.inner.html(this._o.content);
+		}
+		this.setPosition({coords: o.coords});
+
+
+		this._cb_loaded();
+	break;
+	}
+}
+
 proto.hide = function (opts) {
 	opts = opts || {};
-	if(this._o.state !== 'show' && this._o.state !== 'shown') {
+	if(this._o.state !== 'show' && this._o.state !== 'shown' && this._o.state !== 'loading') {
 		throw new Error('njPopover, hide, we can hide only showed popovers(probably animation is still running).');
 	}
 
@@ -350,16 +405,19 @@ proto.hide = function (opts) {
 
 	function removePopover() {
 		if(that._o.contentDisplayNone) {
-			that._o.content.css('display', 'none');
+			that._o.contentEl.css('display', 'none');
 			delete that._o.contentDisplayNone;
 		}
 
-		if(that._o.content) {
-			that.v.body.append(that._o.content);
-			delete that._o.content;
+		if(that._o.contentEl) {
+			that.v.body.append(that._o.contentEl);
+			delete that._o.contentEl;
 		}
 
 		that.v.popover.remove();
+
+		delete that._o.content;
+
 		delete that._o.coords.popoverCoords;
 		delete that._o.coords.elemCoords;
 		delete that._o.coords.viewportCoords;
@@ -845,6 +903,30 @@ proto._cb_hidden = function () {
 	if(o.$elem.length) o.$elem.triggerHandler('njp_hidden', [this]);	
 	if(typeof o.hidden === 'function') o.hidden.call(this);
 }
+
+proto._cb_loading = function () {
+	this._o.origState = this._o.state;
+	this._o.state = 'loading';
+
+	var o = this.o;
+	
+	this.v.document.triggerHandler('njp_loading', [this]);
+	if(o.$elem.length) o.$elem.triggerHandler('njp_loading', [this]);	
+	if(typeof o.loading === 'function') o.loading.call(this);
+}
+
+proto._cb_loaded = function () {
+	this._o.state = this._o.origState;
+	delete this._o.origState;
+
+	var o = this.o;
+	
+	this.v.document.triggerHandler('njp_loaded', [this]);
+	if(o.$elem.length) o.$elem.triggerHandler('njp_loaded', [this]);	
+	if(typeof o.loaded === 'function') o.loaded.call(this);
+}
+
+
 proto._cb_destroy = function () {
 	var o = this.o;
 	
@@ -894,6 +976,7 @@ njPopover.defaults = {
 
 	anim: 'scale',//(false || string) name of animation (see animation section)
 
+	load: '<b><i>loading</i></b>',//(html) html of element that will be used as content for loading status
 	imgs: '[data-njp-img]',//(boolean false || selector) if imgs selector is presented, plugin will find imags matches to this selector in popup, and wait until they begin downloading(to know it's size), only than show popover 
 
 	autobind: '[data-toggle~="popover"]'//(selector) selector that will be used for autobind
