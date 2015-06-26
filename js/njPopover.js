@@ -279,17 +279,17 @@ proto.show = function (opts) {
 		}
 	}
 
-	if(o.out && o.trigger !== 'follow') {
+	if(o.out) {
 		this.v.document.on('click.njp.njp_out_'+this._o.id, function (e) {
 			var $el = $(e.target);
 
 			if(o.elem) {
 				if(o.out === true) {
-					if($el[0] !== o.elem && !$el.closest('[data-njp-popover]').length) {
+					if(!o.elem.contains($el[0]) && !$el.closest('[data-njp-popover]').length) {
 						that.hide();
 					}
 				} else if(o.out === 'all') {
-					if($el[0] !== o.elem) {
+					if(!o.elem.contains($el[0])) {
 						that.hide();
 					}
 				}
