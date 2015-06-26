@@ -164,16 +164,16 @@ proto.show = function (opts) {
 	break;
 	case 'selector':
 		// if(!this._o.content) 
-		this._o.content = $(content);
+		this._o.contentEl = $(content);
 
-		if(this._o.content.length) {
+		if(this._o.contentEl.length) {
 			//make element visible
-			if(this._o.content.css('display') === 'none') {
-				this._o.content.css('display', 'block');
+			if(this._o.contentEl.css('display') === 'none') {
+				this._o.contentEl.css('display', 'block');
 				this._o.contentDisplayNone = true;//flag shows that element we used as content, initially was hidden
 			}
 
-			this.v.inner.append(this._o.content);
+			this.v.inner.append(this._o.contentEl);
 		} else {
 			throw new Error('njPopover, wrong content selector or no such element.');
 		}
@@ -241,10 +241,6 @@ proto.show = function (opts) {
 		njmSetInterval(1);
 	}
 
-
-
-
-	
 	function insertPopover() {
 		this.v.container.prepend(this.v.popover);
 
@@ -898,10 +894,9 @@ njPopover.defaults = {
 
 	anim: 'scale',//(false || string) name of animation (see animation section)
 
-	// load: '',//(html) html of element that will be 
 	imgs: '[data-njp-img]',//(boolean false || selector) if imgs selector is presented, plugin will find imags matches to this selector in popup, and wait until they begin downloading(to know it's size), only than show popover 
 
-	autobind: '[data-toggle="popover"]'//(selector) selector that will be used for autobind
+	autobind: '[data-toggle~="popover"]'//(selector) selector that will be used for autobind
 }
 
 })(window, document);
