@@ -81,7 +81,7 @@ proto._init = function (opts) {
 				attrContent = o.$elem.attr(o.attr)
 			}
 
-			if(attrContent) o.content = attrContent;
+			if(attrContent && !o.content) o.content = attrContent;
 		}
 
 		o.elem.njPopover = this;
@@ -866,7 +866,7 @@ proto._cb_inited = function () {//cb - callback
 
 	this.v.document.triggerHandler('njp_inited', [this]);
 	if(o.$elem.length) o.$elem.triggerHandler('njp_inited', [this]);
-	if(typeof o.init === 'function') o.init.call(this);
+	if(typeof o.inited === 'function') o.inited.call(this);
 }
 proto._cb_show = function () {
 	this._o.state = 'show';
