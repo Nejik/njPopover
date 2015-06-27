@@ -96,7 +96,7 @@ proto._init = function (opts) {
 
 	this._setTrigger();
 
-	this._cb_inited();
+	this._cb('inited');
 }
 
 proto.show = function (opts) {
@@ -189,7 +189,7 @@ proto.show = function (opts) {
 	}
 
 
-	if(this._cb_show() === false) return;//callback show
+	if(this._cb('show') === false) return;//callback show
 
 
 	//wait images(see descripton of o.imgs)
@@ -287,11 +287,11 @@ proto.show = function (opts) {
 				delete that._o.showTimeout;
 				that.v.inner.removeClass('njp-show-'+that.o.animShow + ' '+ 'njp-shown-'+that.o.animShow);
 
-				that._cb_shown();
+				that._cb('shown');
 			}, that._getMaxTransitionDuration(this.v.inner[0]));
 
 		} else {
-			that._cb_shown();
+			that._cb('shown');
 		}
 	}
 
@@ -349,7 +349,7 @@ proto.loading = function (state, content) {
 		}
 		this.setPosition({coords: o.coords});
 
-		this._cb_loading();
+		this._cb('loading');
 	break;
 	case 'off':
 		if(!this._o.loading) throw new Error('njPopover, popover not in loading state.');
@@ -370,7 +370,7 @@ proto.loading = function (state, content) {
 		this.setPosition({coords: o.coords});
 
 
-		this._cb_loaded();
+		this._cb('loaded');
 	break;
 	}
 }
@@ -388,14 +388,14 @@ proto.hide = function (opts) {
 	if(this._o.state === 'show') {
 		if(this._o.showTimeout !== undefined) {
 			this.v.inner.removeClass('njp-show-'+this.o.animShow + ' '+ 'njp-shown-'+this.o.animShow);
-			that._cb_shown();
+			that._cb('shown');
 
 			clearTimeout(this._o.showTimeout);
 			delete this._o.showTimeout;
 		}
 	}
 
-	if(this._cb_hide() === false) return;//callback hide
+	if(this._cb('hide') === false) return;//callback hide
 
 	if(o.animHide) {
 		this.v.inner.addClass('njp-hide-'+this.o.animHide);
@@ -438,7 +438,7 @@ proto.hide = function (opts) {
 
 		that.v.document.off('click.njp_out_'+that._o.id);
 
-		that._cb_hidden();
+		that._cb('hidden');
 	}
 
 	if(o._iife) this.destroy();
@@ -473,7 +473,7 @@ proto.setPosition = function (opts) {
 			//remember proper coordinates
 			this._o.coords.popoverCoords = getCoords(this.v.popover[0]);
 
-			this._cb_positioned();
+			this._cb('positioned');
 		} else {
 			this.hide();
 			throw new Error('njPopover, final coords should be string with 2 numbers, popover position is wrong, hide popover.');
@@ -622,7 +622,7 @@ proto.setPosition = function (opts) {
 	//remember proper coordinates
 	this._o.coords.popoverCoords = getCoords(this.v.popover[0]);
 
-	this._cb_positioned();
+	this._cb('positioned');
 
 	return this;
 }
@@ -634,7 +634,7 @@ proto.destroy = function () {
 		throw new Error('njPopover, nothing to destroy, plugin not initialized.');//nothing to destroy, plugin not initialized
 	}
 
-	this._cb_destroy();
+	this._cb('destroy');
 
 	try {
 		this.hide();
@@ -655,7 +655,7 @@ proto.destroy = function () {
 		delete njPopover.instances[this._o.id];
 		njPopover.instances.length--;
 
-		this._cb_destroyed();
+		this._cb('destroyed');
 
 		return this;
 	}
@@ -856,99 +856,35 @@ proto._getMaxTransitionDuration = function (el) {
 
 
 
-
-
 //callbacks
-proto._cb_inited = function () {//cb - callback
-	this._o.state = 'inited';
-
+proto._cb = function (type) {//cb - callback
 	var o = this.o;
 
-	this.v.document.triggerHandler('njp_inited', [this]);
-	if(o.$elem.length) o.$elem.triggerHandler('njp_inited', [this]);
-	if(typeof o.inited === 'function') o.inited.call(this);
-}
-proto._cb_show = function () {
-	this._o.state = 'show';
-	
-	var o = this.o;
 
-	this.v.document.triggerHandler('njp_show', [this]);
-	if(o.$elem.length) o.$elem.triggerHandler('njp_show', [this]);	
-	if(typeof o.show === 'function') return o.show.call(this);
-}
-proto._cb_positioned = function () {
-	var o = this.o;
+	if(type !== 'positioned' && 
+	   type !== 'loading' &&
+	   type !== 'loaded'
+	  ) {
+		this._o.state = type;
+	}
 
-	this.v.document.triggerHandler('njp_positioned', [this]);
-	if(o.$elem.length) o.$elem.triggerHandler('njp_positioned', [this]);
-	if(typeof o.positioned === 'function') o.positioned.call(this);
-}
-proto._cb_shown = function () {
-	this._o.state = 'shown';
+	if(type === 'hidden') this._o.state = 'inited';
 
-	var o = this.o;
+	switch(type) {
+	case 'loading':
+		this._o.loading = true;
+	break;
+	case 'loaded':
+		delete this._o.loading;
+	break;
+	}
 
-	this.v.document.triggerHandler('njp_shown', [this]);
-	if(o.$elem.length) o.$elem.triggerHandler('njp_shown', [this]);	
-	if(typeof o.shown === 'function') o.shown.call(this);
-}
-proto._cb_hide = function () {
-	this._o.state = 'hide';
 
-	var o = this.o;
-
-	this.v.document.triggerHandler('njp_hide', [this]);
-	if(o.$elem.length) o.$elem.triggerHandler('njp_hide', [this]);	
-	if(typeof o.hide === 'function') o.hide.call(this);
-}
-proto._cb_hidden = function () {
-	this._o.state = 'inited';
-
-	var o = this.o;
-	
-	this.v.document.triggerHandler('njp_hidden', [this]);
-	if(o.$elem.length) o.$elem.triggerHandler('njp_hidden', [this]);	
-	if(typeof o.hidden === 'function') o.hidden.call(this);
+	this.v.document.triggerHandler('njp_'+type, [this]);
+	if(o.$elem.length) o.$elem.triggerHandler('njp_'+type, [this]);
+	if(typeof o[type] === 'function') o[type].call(this);
 }
 
-proto._cb_loading = function () {
-	this._o.loading = true;
-
-	var o = this.o;
-	
-	this.v.document.triggerHandler('njp_loading', [this]);
-	if(o.$elem.length) o.$elem.triggerHandler('njp_loading', [this]);	
-	if(typeof o.loading === 'function') o.loading.call(this);
-}
-
-proto._cb_loaded = function () {
-	delete this._o.loading;
-
-	var o = this.o;
-	
-	this.v.document.triggerHandler('njp_loaded', [this]);
-	if(o.$elem.length) o.$elem.triggerHandler('njp_loaded', [this]);	
-	if(typeof o.loaded === 'function') o.loaded.call(this);
-}
-
-
-proto._cb_destroy = function () {
-	var o = this.o;
-	
-	this.v.document.triggerHandler('njp_destroy', [this]);
-	if(o.$elem.length) o.$elem.triggerHandler('njp_destroy', [this]);	
-	if(typeof o.destroy === 'function') o.destroy.call(this);
-}
-proto._cb_destroyed = function () {
-	this._o.state = 'destroyed';
-
-	var o = this.o;
-	
-	this.v.document.triggerHandler('njp_destroyed', [this]);
-	if(o.$elem.length) o.$elem.triggerHandler('njp_destroyed', [this]);	
-	if(typeof o.destroyed === 'function') o.destroyed.call(this);
-}
 
 
 
