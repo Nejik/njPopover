@@ -262,9 +262,9 @@ proto.show = function (opts) {
 
 		//initial position
 		if(opts && opts.e) {
-			that.setPosition({init:true, e:opts.e, coords: o.coords});
+			that.position({init:true, e:opts.e, coords: o.coords});
 		} else {
-			that.setPosition({init:true, coords: o.coords});
+			that.position({init:true, coords: o.coords});
 		}
 
 		if(o.animShow) {
@@ -322,57 +322,10 @@ proto.show = function (opts) {
 	}
 
 	this.v.window.on('resize.njp.njp_'+this._o.id, function () {
-		that.setPosition();
+		that.position();
 	})
 
 	return this;
-}
-
-proto.loading = function (state, content) {
-	var o = this.o;
-
-	switch(state) {
-	case 'on':
-		if(this._o.state === 'inited') throw new Error('njPopover, you should first show popover.');
-		if(this._o.loading) throw new Error('njPopover, popover already in loading state');
-		//insert content from arguments
-		if(content) {
-			if(typeof content === 'string' || typeof content === 'number') {
-				this.v.inner.html(content);
-			} else if(content.nodeType) {
-				this.v.inner.append($(content))
-			} else {
-				throw new Error('njPopover, smth wrong with argument content.');
-			}
-		} else if(o.load) {
-			this.v.inner.html(o.load);
-		}
-		this.setPosition({coords: o.coords});
-
-		this._cb('loading');
-	break;
-	case 'off':
-		if(!this._o.loading) throw new Error('njPopover, popover not in loading state.');
-		if(content) {
-			if(typeof content === 'string' || typeof content === 'number') {
-				this.v.inner.html(content);
-			} else if(content.nodeType) {
-				this.v.inner.append($(content))
-			} else {
-				throw new Error('njPopover, smth wrong with argument content.');
-			}
-		} else if(this._o.contentEl) {//return orig content
-			this.v.inner.html('');
-			this.v.inner.append(this._o.contentEl);
-		} else if(this._o.content) {
-			this.v.inner.html(this._o.content);
-		}
-		this.setPosition({coords: o.coords});
-
-
-		this._cb('loaded');
-	break;
-	}
 }
 
 proto.hide = function (opts) {
@@ -445,7 +398,7 @@ proto.hide = function (opts) {
 	return this;
 }
 
-proto.setPosition = function (opts) {
+proto.position = function (opts) {
 	opts = opts || {};
 	if(!this.v.popover) return;//we can't set position of element, if there is no popover...
 	// if(this._o.state !== 'shown' && opts.init !== true) {
@@ -661,7 +614,56 @@ proto.destroy = function () {
 	}
 }
 
-proto.setOptions = function (opts) {
+proto.loading = function (state, content) {
+	var o = this.o;
+
+	switch(state) {
+	case 'on':
+		if(this._o.state === 'inited') throw new Error('njPopover, you should first show popover.');
+		if(this._o.loading) throw new Error('njPopover, popover already in loading state');
+		//insert content from arguments
+		if(content) {
+			if(typeof content === 'string' || typeof content === 'number') {
+				this.v.inner.html(content);
+			} else if(content.nodeType) {
+				this.v.inner.append($(content))
+			} else {
+				throw new Error('njPopover, smth wrong with argument content.');
+			}
+		} else if(o.load) {
+			this.v.inner.html(o.load);
+		}
+		this.position({coords: o.coords});
+
+		this._cb('loading');
+	break;
+	case 'off':
+		if(!this._o.loading) throw new Error('njPopover, popover not in loading state.');
+		if(content) {
+			if(typeof content === 'string' || typeof content === 'number') {
+				this.v.inner.html(content);
+			} else if(content.nodeType) {
+				this.v.inner.append($(content))
+			} else {
+				throw new Error('njPopover, smth wrong with argument content.');
+			}
+		} else if(this._o.contentEl) {//return orig content
+			this.v.inner.html('');
+			this.v.inner.append(this._o.contentEl);
+		} else if(this._o.content) {
+			this.v.inner.html(this._o.content);
+		}
+		this.position({coords: o.coords});
+
+
+		this._cb('loaded');
+	break;
+	}
+
+	return this;
+}
+
+proto.options = function (opts) {
 	if(!opts) return;
 
 	var o = this.o,
@@ -715,7 +717,7 @@ proto._setTrigger = function () {
 				
 				if(o.trigger === 'follow') {
 					that.v.document.on('mousemove.njp.njp_'+that._o.id, function (e) {
-						that.setPosition({e:e});
+						that.position({e:e});
 					})
 				}
 			})
@@ -905,7 +907,7 @@ njPopover.defaults = {
 
 
 	template:'<div class="njp-popover" data-njp-popover style="position:absolute;"><div class="njp-inner" data-njp-inner></div></div>',//(string) base HTML to use when creating the popover
-	attr: 'title',//get content for popover from this attribute
+	attr: 'title',//get content for popover from this attribute, if there is no o.content option
 	type: 'text',//(text || html || selector) type of content, if selector used, whole element will be inserted in tooltip
 	content: '',//(string || function) content for popover
 
