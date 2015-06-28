@@ -863,7 +863,8 @@ proto._cb = function (type) {//cb - callback
 
 	if(type !== 'positioned' && 
 	   type !== 'loading' &&
-	   type !== 'loaded'
+	   type !== 'loaded' &&
+	   type !== 'destroy'
 	  ) {
 		this._o.state = type;
 	}
