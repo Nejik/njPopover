@@ -331,6 +331,7 @@ proto.show = function (opts) {
 proto.hide = function (opts) {
 	opts = opts || {};
 	if(this._o.state !== 'show' && this._o.state !== 'shown' && this._o.state !== 'loading') {
+		console.log(this._o.state)
 		throw new Error('njPopover, hide, we can hide only showed popovers(probably animation is still running).');
 	}
 
@@ -411,6 +412,8 @@ proto.position = function (opts) {
 
 	(typeof o.margin === 'number') ? o.margin = o.margin : o.margin = 0;
 
+	opts.coords = opts.coords || this._cb('position');
+	
 	//if we have option with coordinates, use this coords
 	if(opts.coords) {
 		if(typeof opts.coords === 'string') {
@@ -434,7 +437,7 @@ proto.position = function (opts) {
 		return;	
 	}
 	function isNumber(n) {
-	  return !isNaN(parseFloat(n)) && isFinite(n);
+		return !isNaN(parseFloat(n)) && isFinite(n);
 	}
 
 
@@ -863,11 +866,12 @@ proto._cb = function (type) {//cb - callback
 	var o = this.o;
 
 
-	if(type !== 'positioned' && 
-	   type !== 'loading' &&
-	   type !== 'loaded' &&
-	   type !== 'destroy'
-	  ) {
+	if( type !== 'position' &&
+		type !== 'positioned' &&
+		type !== 'loading' &&
+		type !== 'loaded' &&
+		type !== 'destroy'
+		) {
 		this._o.state = type;
 	}
 
@@ -885,7 +889,7 @@ proto._cb = function (type) {//cb - callback
 
 	this.v.document.triggerHandler('njp_'+type, [this]);
 	if(o.$elem.length) o.$elem.triggerHandler('njp_'+type, [this]);
-	if(typeof o[type] === 'function') o[type].call(this);
+	if(typeof o[type] === 'function') return o[type].call(this);
 }
 
 
