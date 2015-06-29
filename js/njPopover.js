@@ -153,23 +153,16 @@ proto.show = function (opts) {
 	if(!this.v.viewport.length) {
 		this.v.viewport = this.v.document
 	}
-	
 
-
-	//find element where we should set content
-	this.v.inner = this.v.popover.find('[data-njp-inner]');
-	if(!this.v.inner.length) {
-		throw new Error('njPopover, there is no element [data-njp-inner].');
-	}
-	if(o.class) this.v.inner.addClass(o.class);
+	if(o.class) this.v.popover.addClass(o.class);
 
 	//set content
 	switch(o.type) {
 	case 'text':
-		this.v.inner.text(content)
+		this.v.popover.text(content)
 	break;
 	case 'html':
-		this.v.inner.html(content)
+		this.v.popover.html(content)
 	break;
 	case 'selector':
 		// if(!this._o.content) 
@@ -182,7 +175,7 @@ proto.show = function (opts) {
 				this._o.contentDisplayNone = true;//flag shows that element we used as content, initially was hidden
 			}
 
-			this.v.inner.append(this._o.contentEl);
+			this.v.popover.append(this._o.contentEl);
 		} else {
 			throw new Error('njPopover, wrong content selector or no such element.');
 		}
@@ -274,23 +267,20 @@ proto.show = function (opts) {
 			// this.v.popover.remove();
 			// this.v.container.prepend(this.v.popover);
 
-			//this is working in all browsers
-			this.v.popover.css('display','none');
-			this.v.popover[0].clientHeight;//force relayout
-			this.v.popover.css('display','block');
-			
+			//fix disabling transition because of getBoundingClipRect
+			this.v.popover.css('display','none');this.v.popover[0].clientHeight;this.v.popover.css('display','block');
 
-			this.v.inner.addClass('njp-show-'+this.o.animShow);
-			this.v.inner[0].clientHeight;//force relayout
-			this.v.inner.addClass('njp-shown-'+this.o.animShow);
+			this.v.popover.addClass('njp-show-'+this.o.animShow);
+			this.v.popover[0].clientHeight;//force relayout
+			this.v.popover.addClass('njp-shown-'+this.o.animShow);
 
 
 			this._o.showTimeout = setTimeout(function(){
 				delete that._o.showTimeout;
-				that.v.inner.removeClass('njp-show-'+that.o.animShow + ' '+ 'njp-shown-'+that.o.animShow);
+				that.v.popover.removeClass('njp-show-'+that.o.animShow + ' '+ 'njp-shown-'+that.o.animShow);
 
 				that._cb('shown');
-			}, that._getMaxTransitionDuration(this.v.inner[0]));
+			}, that._getMaxTransitionDuration(this.v.popover[0]));
 
 		} else {
 			that._cb('shown');
@@ -343,7 +333,7 @@ proto.hide = function (opts) {
 	//fix for case, when we should run hide, before show animation finished(follow mode for example)
 	if(this._o.state === 'show') {
 		if(this._o.showTimeout !== undefined) {
-			this.v.inner.removeClass('njp-show-'+this.o.animShow + ' '+ 'njp-shown-'+this.o.animShow);
+			this.v.popover.removeClass('njp-show-'+this.o.animShow + ' '+ 'njp-shown-'+this.o.animShow);
 			that._cb('shown');
 
 			clearTimeout(this._o.showTimeout);
@@ -354,13 +344,13 @@ proto.hide = function (opts) {
 	if(this._cb('hide') === false) return;//callback hide
 
 	if(o.animHide) {
-		this.v.inner.addClass('njp-hide-'+this.o.animHide);
-		this.v.inner[0].clientHeight;//force relayout
-		this.v.inner.addClass('njp-hidden-'+this.o.animHide);
+		this.v.popover.addClass('njp-hide-'+this.o.animHide);
+		this.v.popover[0].clientHeight;//force relayout
+		this.v.popover.addClass('njp-hidden-'+this.o.animHide);
 
 		setTimeout(function(){
 			removePopover();
-		}, that._getMaxTransitionDuration(that.v.inner[0]))
+		}, that._getMaxTransitionDuration(that.v.popover[0]))
 	} else {
 		removePopover();
 	}
@@ -390,7 +380,6 @@ proto.hide = function (opts) {
 		delete that.v.container;
 		delete that.v.viewport;
 		delete that.v.popover;
-		delete that.v.inner;
 
 		that.v.document.off('click.njp_out_'+that._o.id);
 
@@ -629,14 +618,14 @@ proto.loading = function (state, content) {
 		//insert content from arguments
 		if(content) {
 			if(typeof content === 'string' || typeof content === 'number') {
-				this.v.inner.html(content);
+				this.v.popover.html(content);
 			} else if(content.nodeType) {
-				this.v.inner.append($(content))
+				this.v.popover.append($(content))
 			} else {
 				throw new Error('njPopover, smth wrong with argument content.');
 			}
 		} else if(o.load) {
-			this.v.inner.html(o.load);
+			this.v.popover.html(o.load);
 		}
 		this.position({coords: o.coords});
 
@@ -646,17 +635,17 @@ proto.loading = function (state, content) {
 		if(!this._o.loading) throw new Error('njPopover, popover not in loading state.');
 		if(content) {
 			if(typeof content === 'string' || typeof content === 'number') {
-				this.v.inner.html(content);
+				this.v.popover.html(content);
 			} else if(content.nodeType) {
-				this.v.inner.append($(content))
+				this.v.popover.append($(content))
 			} else {
 				throw new Error('njPopover, smth wrong with argument content.');
 			}
 		} else if(this._o.contentEl) {//return orig content
-			this.v.inner.html('');
-			this.v.inner.append(this._o.contentEl);
+			this.v.popover.html('');
+			this.v.popover.append(this._o.contentEl);
 		} else if(this._o.content) {
-			this.v.inner.html(this._o.content);
+			this.v.popover.html(this._o.content);
 		}
 		this.position({coords: o.coords});
 
@@ -712,7 +701,7 @@ proto._setTrigger = function () {
 			o.$elem.on('mouseenter.njp.njp_'+that._o.id, function (e) {
 				
 				//don't fire show event, when show mouse came from popover on element(case when popover not placed in container(document))
-				if(that.v.popover && that.v.inner) {
+				if(that.v.popover && that.v.popover) {
 					if(!$(e.relatedTarget).closest('[data-njp-popover]').length) {
 						that.show({e:e});
 					}
@@ -930,7 +919,7 @@ njPopover.defaults = {
 	margin: 5,//(number) margin from element
 
 
-	template:'<div class="njp-popover" data-njp-popover style="position:absolute;"><div class="njp-inner" data-njp-inner></div></div>',//(string) base HTML to use when creating the popover
+	template:'<div class="njp-popover" data-njp-popover style="position:absolute;"></div>',//(string) base HTML to use when creating the popover
 	attr: 'title',//get content for popover from this attribute, if there is no o.content option
 	type: 'text',//(text || html || selector) type of content, if selector used, whole element will be inserted in tooltip
 	content: '',//(string || function) content for popover
