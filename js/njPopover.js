@@ -161,6 +161,7 @@ proto.show = function (opts) {
 	if(!this.v.inner.length) {
 		throw new Error('njPopover, there is no element [data-njp-inner].');
 	}
+	if(o.class) this.v.inner.addClass(o.class);
 
 	//set content
 	switch(o.type) {
@@ -914,7 +915,7 @@ njPopover.defaults = {
 	attr: 'title',//get content for popover from this attribute, if there is no o.content option
 	type: 'text',//(text || html || selector) type of content, if selector used, whole element will be inserted in tooltip
 	content: '',//(string || function) content for popover
-
+	class: false,//(string) classnames(separated with space) that will be added to popover
 
 
 	container: 'body',//(selector) appends the popover to a specific element
