@@ -284,6 +284,7 @@ proto.show = function (opts) {
 			this.v.inner[0].clientHeight;//force relayout
 			this.v.inner.addClass('njp-shown-'+this.o.animShow);
 
+
 			this._o.showTimeout = setTimeout(function(){
 				delete that._o.showTimeout;
 				that.v.inner.removeClass('njp-show-'+that.o.animShow + ' '+ 'njp-shown-'+that.o.animShow);
@@ -874,8 +875,7 @@ proto._getMaxTransitionDuration = function (el) {
 		transitions[i] = durArr[i] + delArr[i]
 	}
 
-
-	return Math.max.apply(Math, transitions)*1000;
+	return Math.max.apply(Math, transitions);
 }
 
 
