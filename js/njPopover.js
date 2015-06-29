@@ -845,18 +845,37 @@ proto._gatherData = function (first) {//first - only first, initial data gather
 
 proto._getMaxTransitionDuration = function (el) {
 	var el = $(el),
-		str,
-		arr;
+		dur,
+		durArr,
+		del,
+		delArr,
+		transitions = [];
 
 	if(!$(el).length) return 0;
 
-	str = el.css('transitionDuration');
+	//make array with durations
+	dur = el.css('transitionDuration');
+	if (!dur || dur == undefined) dur = '0s';
+	durArr = dur.split(', ');
+	for (var i = 0, l = durArr.length; i < l ;i++) {
+		durArr[i] = (durArr[i].indexOf("ms")>-1) ? parseFloat(durArr[i]) : parseFloat(durArr[i])*1000;
+	}
 
-	if (!str || str == undefined) str = '0s';
-	
-	arr = str.replace(/s/gi,'').split(', ');
+	//make array with delays
+	del = el.css('transitionDelay');
+	if (!del || del == undefined) del = '0s';
+	delArr = del.split(', ');
+	for (var i = 0, l = delArr.length; i < l ;i++) {
+		delArr[i] = (delArr[i].indexOf("ms")>-1) ? parseFloat(delArr[i]) : parseFloat(delArr[i])*1000;
+	}
 
-	return Math.max.apply(Math, arr)*1000;
+	//make array with duration+delays
+	for (var i = 0, l = durArr.length; i < l ;i++) {
+		transitions[i] = durArr[i] + delArr[i]
+	}
+
+
+	return Math.max.apply(Math, transitions)*1000;
 }
 
 

@@ -1,4 +1,3 @@
-- все такие сделать метод clear и тыкать перед генерированием ошибок
 //adapters to prototype, ember - opentip
 
 
