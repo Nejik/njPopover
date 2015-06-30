@@ -109,8 +109,8 @@ proto._init = function (opts) {
 		o.trigger = false;//if we have no element, we should use manually show/hide
 	}
 
-	if(!o.elem || (!o.coords && !o.content)) {
-		throw new Error('njPopover, no element or no coords and content settings, nothing to show, destroy.');//don't show popover if we have no coords for showing
+	if(!o.elem && ((!o.coords || !o.content))) {
+		throw new Error('njPopover, no element or no coords or content settings, nothing to show, destroy.');//don't show popover if we have no coords for showing
 	}
 
 	//remember instance id in this set, for deleting it when close (todo)
