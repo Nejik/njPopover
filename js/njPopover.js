@@ -114,12 +114,6 @@ proto.show = function (opts) {
 
 	if(o.elem) this._gatherData();//update our settings
 
-	if(o.anim) {//make animation names
-		var tmp = o.anim.split(' ');
-		o.animShow = tmp[0];
-		(tmp[1]) ? o.animHide = tmp[1] : o.animHide = tmp[0];
-	}
-
 	if(typeof o.content === 'function') {
 		content = o.content.call(this);
 	} else {
@@ -141,10 +135,11 @@ proto.show = function (opts) {
 	}
 
 	this.v.wrap = $(o.template).css({'position':'absolute','visibility':'hidden'});
+	if(o.zindex) this.v.wrap.css({'zIndex':o.zindex});
+
 	if(!this.v.wrap.length) {
 		throw new Error('njPopover, wrong o.template.');
 	}
-	if(o.zindex) this.v.wrap.css({'zIndex':o.zindex});
 
 
 	this.v.wrap[0].njPopover = this;
@@ -266,34 +261,21 @@ proto.show = function (opts) {
 			that.position({init:true, coords: o.coords});
 		}
 
-		if(o.animShow) {
-			//i don't know why, but elem.getBoundingClientRect used on elem stops any future transitions(june 2015), thats why after position, we hides and show elem again,
-			// also working next method:
-			// this.v.wrap.remove();
-			// this.v.container.prepend(this.v.wrap);
+		//i don't know why, but elem.getBoundingClientRect used on elem stops any future transitions(june 2015), thats why after position, we hides and show elem again,
+		// also working next method:
+		// this.v.wrap.remove();
+		// this.v.container.prepend(this.v.wrap);
 
-			//this is working in all browsers
-			this.v.wrap.css('display','none');
-			this.v.wrap[0].clientHeight;//force relayout
-			this.v.wrap.css('display','block');
-			
+		//this is working in all browsers
+		this.v.wrap.css('display','none');
+		this.v.wrap[0].clientHeight;//force relayout
+		this.v.wrap.css('display','block');
 
-			this.v.popover.addClass('njp-show-'+this.o.animShow);
-			this.v.popover[0].clientHeight;//force relayout
-			this.v.popover.addClass('njp-shown-'+this.o.animShow);
-
-
-			this._o.showTimeout = setTimeout(function(){
-				delete that._o.showTimeout;
-				that.v.popover.removeClass('njp-show-'+that.o.animShow + ' '+ 'njp-shown-'+that.o.animShow);
-
-				that._cb('shown');
-			}, that._getMaxTransitionDuration(this.v.popover[0]));
-
-		} else {
-			that._cb('shown');
-		}
+		this._anim('show');
 	}
+
+
+
 
 	if(o.out) {
 		this.v.document.on('click.njp.njp_out_'+this._o.id, function (e) {
@@ -354,19 +336,8 @@ proto.hide = function (opts) {
 
 	if(this._cb('hide') === false) return;//callback hide
 
-	if(o.animHide) {
-		this.v.popover.addClass('njp-hide-'+this.o.animHide);
-		this.v.popover[0].clientHeight;//force relayout
-		this.v.popover.addClass('njp-hidden-'+this.o.animHide);
 
-		setTimeout(function(){
-			removePopover();
-		}, that._getMaxTransitionDuration(that.v.popover[0]))
-	} else {
-		removePopover();
-	}
-	
-	
+	this._anim('hide', removePopover);
 
 	function removePopover() {
 		if(that._o.contentDisplayNone) {
@@ -429,7 +400,7 @@ proto.position = function (opts) {
 			coords = opts.coords.call(this).split(' ');
 		}
 		
-		if($.isArray(coords) && coords.length === 2 && isNumber(coords[0]) && isNumber(coords[1])) {
+		if($.isArray(coords) && coords.length === 2 && this._isNumber(coords[0]) && this._isNumber(coords[1])) {
 			this.v.wrap.css({'left' : parseFloat(coords[0])+'px',"top" : parseFloat(coords[1])+'px'});
 			if(opts.init) this.v.wrap.css('visibility','visible');
 
@@ -443,10 +414,6 @@ proto.position = function (opts) {
 		}
 		return;	
 	}
-	function isNumber(n) {
-		return !isNaN(parseFloat(n)) && isFinite(n);
-	}
-
 
 	//if we don't have o.coords, calculate position	
 	var eC = this._o.coords.elemCoords = getCoords(o.elem),//trigger element coordinates
@@ -847,18 +814,19 @@ proto._gatherData = function (first) {//first - only first, initial data gather
 	$.extend(true, o, dataMeta);//extend original options with gathered
 }
 
-proto._getMaxTransitionDuration = function (el) {
-	var el = $(el),
+proto._getMaxTransitionDuration = function (el, property) {//it allso can get animation duration
+	var $el = $(el),
 		dur,
 		durArr,
 		del,
 		delArr,
 		transitions = [];
 
-	if(!$(el).length) return 0;
+	if(!$el.length) return 0;
+	if(!property) return 0;
 
 	//make array with durations
-	dur = el.css('transitionDuration');
+	dur = $el.css(property);
 	if (!dur || dur == undefined) dur = '0s';
 	durArr = dur.split(', ');
 	for (var i = 0, l = durArr.length; i < l ;i++) {
@@ -866,7 +834,7 @@ proto._getMaxTransitionDuration = function (el) {
 	}
 
 	//make array with delays
-	del = el.css('transitionDelay');
+	del = $el.css('transitionDelay');
 	if (!del || del == undefined) del = '0s';
 	delArr = del.split(', ');
 	for (var i = 0, l = delArr.length; i < l ;i++) {
@@ -881,8 +849,87 @@ proto._getMaxTransitionDuration = function (el) {
 	return Math.max.apply(Math, transitions);
 }
 
+proto._anim = function (type, callback) {
+	var o = this.o,
+		that = this,
+		animShow,
+		animHide,
+		animShowDur,
+		animHideDur,
+		tmp;
+
+	//get animation names
+	if(o.anim) {//make animation names
+		tmp = o.anim.split(' ');
+		animShow = tmp[0];
+		(tmp[1]) ? animHide = tmp[1] : animHide = tmp[0];
+	}
+
+	//get animation durations
+	if(o.duration) {
+		tmp = o.duration.split(' ');
+		animShowDur = tmp[0];
+		(tmp[1]) ? animHideDur = tmp[1] : animHideDur = animShowDur;
+	}
+
+	switch(type) {
+	case 'show':
+		if(animShow) {
+			this.v.popover.addClass('njp-show-'+animShow);
+			this.v.popover[0].clientHeight;//force relayout
+			this.v.popover.addClass('njp-shown-'+animShow);
+
+			if(!animShowDur || animShowDur === 'auto') {
+				animShowDur = that._getMaxTransitionDuration(this.v.popover[0], 'animationDuration') || that._getMaxTransitionDuration(this.v.popover[0], 'transitionDuration');
+			} else {//if duration was set via options, transform it to number
+				animShowDur = parseInt(animShowDur) || 0;
+			}
 
 
+
+			this._o.showTimeout = setTimeout(function(){
+				delete that._o.showTimeout;
+				that.v.popover.removeClass('njp-show-'+animShow + ' '+ 'njp-shown-'+animShow);
+
+				that._cb('shown');
+			}, animShowDur);
+
+		} else {
+			that._cb('shown');
+		}
+	break;
+
+	case 'hide':
+		if(animHide) {
+			this.v.popover.addClass('njp-hide-'+animHide);
+			this.v.popover[0].clientHeight;//force relayout
+			this.v.popover.addClass('njp-hidden-'+animHide);
+
+			if(!animHideDur || animHideDur === 'auto') {
+				animHideDur = that._getMaxTransitionDuration(this.v.popover[0], 'animationDuration') || that._getMaxTransitionDuration(this.v.popover[0], 'transitionDuration');
+			} else {//if duration was set via options, transform it to number
+				animHideDur = parseInt(animHideDur) || 0;
+			}
+
+			setTimeout(function(){
+				callback();
+			}, animHideDur)
+		} else {
+			callback();
+		}
+	break;
+	}
+}
+
+
+
+
+
+
+
+proto._isNumber = function (n) {
+	return !isNaN(parseFloat(n)) && isFinite(n);
+}
 
 //callbacks
 proto._cb = function (type) {//cb - callback
@@ -946,7 +993,8 @@ njPopover.defaults = {
 	auto: true,//(boolean) this option dynamically reorient the popover. For example, if placement is "left", the popover will display to the left when possible, otherwise it will display right.
 	zindex: false,//(boolean false || number) zindex that will be set on popover
 
-	anim: 'scale',//(false || string) name of animation (see animation section)
+	anim: 'fade',//(false || string) name of animation, or string with space separated 2 names of show/hide animation
+	duration: 'auto',//(string || number || auto) duration of animation, or string with space separated 2 duration of show/hide animation. You can set 'auto 100' if you want to set only duration for hide
 
 	load: '<img src="img/spinner.gif" alt="loading" />',//(html) html of element that will be used as content for loading status
 	imgs: '[data-njp-img]',//(boolean false || selector) if imgs selector is presented, plugin will find images matches to this selector in popover, and wait until they begin downloading(to know it's size), only than show popover 
