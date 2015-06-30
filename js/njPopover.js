@@ -109,6 +109,10 @@ proto._init = function (opts) {
 		o.trigger = false;//if we have no element, we should use manually show/hide
 	}
 
+	if(!o.elem || (!o.coords && !o.content)) {
+		throw new Error('njPopover, no element or no coords and content settings, nothing to show, destroy.');//don't show popover if we have no coords for showing
+	}
+
 	//remember instance id in this set, for deleting it when close (todo)
 	this._o.id = njPopover.instances.length;
 	//write instance to global set of all instances
@@ -373,9 +377,7 @@ proto.hide = function (opts) {
 
 		delete that._o.content;
 
-		delete that._o.coords.popoverCoords;
-		delete that._o.coords.elemCoords;
-		delete that._o.coords.viewportCoords;
+		that._o.coords = {};
 
 		//delete all variables, because they generated new on every show
 		delete that.v.container;
