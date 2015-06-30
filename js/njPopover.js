@@ -12,16 +12,36 @@ if(!$) {
 }
 
 //constructor
-window.njPopover = function(opts) {
+window.njPopover = function(el, options) {
+	var opts;
+
+	if(!options) {
+		if(typeof el === 'string' || el.nodeType) {
+			opts = {elem:el}
+		} else if(typeof el === 'object') {
+			opts = el;
+		} else {
+			throw new Error('njPopover, don\'t recognize first argument.');
+		}
+	} else {
+		if(typeof el === 'string' || el.nodeType) {
+			options.elem = el;
+
+			opts = options;
+		} else {
+			throw new Error('njPopover, don\'t recognize first argument.');
+		}
+	}
+
 	opts = opts || {};
 
 	if(!(this instanceof njPopover)) {//when we call njPopover not as a contructor, make instance and call it
 		opts._iife = true;//flag that it is self-invoked call, if iife we destroy it, while hiding popover
 		return new njPopover(opts).show();
+	} else {
+		this._init(opts);
+		return this;
 	}
-
-	this._init(opts);
-	return this;
 };
 
 //global settings/methods
@@ -316,7 +336,6 @@ proto.show = function (opts) {
 proto.hide = function (opts) {
 	opts = opts || {};
 	if(this._o.state !== 'show' && this._o.state !== 'shown' && this._o.state !== 'loading') {
-		console.log(this._o.state)
 		throw new Error('njPopover, hide, we can hide only showed popovers(probably animation is still running).');
 	}
 

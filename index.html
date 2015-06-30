@@ -149,7 +149,7 @@
 		<div class="bla">bla</div>
 		<!-- <div>Lorem ipsum dolor sit amet, consectetur adipisicing elit. Quae aliquam quo accusantium dolore aspernatur, reprehenderit tenetur error ipsum suscipit neque unde impedit? Aliquid omnis, corporis id odit magni molestias tenetur aspernatur numquam unde, expedita laboriosam quisquam fugit quod molestiae alias, deleniti in reiciendis ratione sunt, ea voluptatem iste rem. Odit nisi repellat alias est tempore consequuntur, ipsam voluptas, laboriosam aliquid ducimus? Laboriosam rem quaerat et, ad sit iste quia assumenda illo laborum unde fugit optio accusamus placeat iusto temporibus facere voluptate, repellat dolorem! Earum minima consequuntur quia sed excepturi quidem sequi, sunt in corporis? Optio vero voluptate autem minima amet accusamus eligendi voluptas. Inventore accusantium minus, odio, nostrum asperiores sequi magnam ipsam voluptatem in, qui beatae aspernatur, commodi unde recusandae. Id itaque adipisci, perferendis pariatur ipsum doloremque soluta quibusdam, atque illum magni labore vel enim fugit. Magni nobis eaque quae, neque asperiores cum impedit in velit, consequuntur itaque tempore at! Libero id fugit omnis corporis iusto ut dolore. Harum modi fugiat dolorem possimus quas nesciunt placeat minus, accusamus iste magni mollitia, explicabo assumenda dicta, quam facilis iusto delectus ipsum. Atque assumenda veniam deserunt saepe animi hic ipsa, iste molestiae excepturi est sit perferendis explicabo laborum quas aperiam nemo recusandae dolorum. -->
 		<ul>
-			<li class="test" title=".popoverHtml" data-njp-type="selector" data-njp-anim="fade"><div>one</div></li>
+			<li class="test" title=".popoverHtml" data-njp-type="selector"><div>one</div></li>
 			<!-- <li data-toggle="popover modal" title="title Two">two</li> -->
 			<!-- <li data-toggle="popover modal" title="title Three">three</li> -->
 			<!-- <li data-toggle="popover modal" title='<img src="http://incolor.inebraska.com/tgannon/grfs/birds256_oth/OwlGrH256x256.jpg" data-njp-img alt="" />' data-njp-type="html">four</li> -->
@@ -175,8 +175,12 @@
 		
 
 		<script>
-			// $('.test').njPopover();
-			njPopover();
+			$('.test').njPopover({});
+
+
+			// new njPopover($('.test')[0]);
+			// new njPopover({anim:'scale'});
+			// new njPopover({elem:'.test'});
 		</script>
 	</body>
 </html>
