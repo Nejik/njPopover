@@ -855,7 +855,7 @@ proto._getMaxTransitionDuration = function (el, property) {//it allso can get an
 	}
 
 	//make array with delays
-	del = $el.css('transitionDelay');
+	del = $el.css(property);
 	if (!del || del == undefined) del = '0s';
 	delArr = del.split(', ');
 	for (var i = 0, l = delArr.length; i < l ;i++) {
