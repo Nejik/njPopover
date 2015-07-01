@@ -85,7 +85,7 @@ proto._init = function (opts) {
 
 	if(o.elem) {
 		if(o.elem.njPopover) {
-			throw new Error('njPopover, can\'t be initialized again on this element.');
+			this._error('njPopover, can\'t be initialized again on this element.')
 		}
 		this._gatherData(true);
 
@@ -110,7 +110,7 @@ proto._init = function (opts) {
 	}
 
 	if(!o.elem && ((!o.coords || !o.content))) {
-		throw new Error('njPopover, no element or no coords or content settings, nothing to show, destroy.');//don't show popover if we have no coords for showing
+		this._error('njPopover, no element or no coords or content settings, nothing to show, destroy.')//don't show popover if we have no coords for showing
 	}
 
 	//remember instance id in this set, for deleting it when close (todo)
@@ -126,12 +126,9 @@ proto._init = function (opts) {
 proto.show = function (opts) {
 	opts = opts || {};
 	if(this._o.state !== 'inited') {
-		throw new Error('njPopover, show, plugin not inited or in not inited state(probably animation is still running or plugin already visible).');
+		this._error('njPopover, show, plugin not inited or in not inited state(probably animation is still running or plugin already visible).');
 	}
-	//todo: заготовка для аякса
-	// if(this._o.shown && opts) {
-	// 	//opts - передавать в arguments
-	// }
+
 	var o = this.o,
 			that = this,
 			content;
@@ -146,37 +143,33 @@ proto.show = function (opts) {
 	this._o.content = content;//save computed content (needed for loading)
 
 	if(!content || (typeof content !== 'string' && typeof content !== 'number')) {
-		throw new Error('njPopover, no content for popover.');//don't show popover, if we have no content for popover
+		this._error('njPopover, no content for popover.', true);
 	}
 
 	if(!o.elem && !o.coords) {
-		throw new Error('njPopover, no coords for showing.');//don't show popover if we have no coords for showing
+		this._error('njPopover, no coords for showing.', true)
 	}
 
 	this.v.container = $(o.container);
 	if(!this.v.container.length) {
-		throw new Error('njPopover, no container for popover.');//don't do anything, if we have no container
+		this._error('njPopover, no container for popover.', true);
 	}
 
 	this.v.wrap = $(o.template).css({'position':'absolute','visibility':'hidden'});
-	if(o.zindex) this.v.wrap.css({'zIndex':o.zindex});
-
-	if(!this.v.wrap.length) {
-		throw new Error('njPopover, wrong o.template.');
+	if(!this.v.wrap) {
+		this._error('njPopover,smth wrong with o.template.', true);
 	}
-
+	if(o.zindex) this.v.wrap.css({'zIndex':o.zindex});
 
 	this.v.wrap[0].njPopover = this;
 	(o.viewport === 'document') ? this.v.viewport = this.v.document : this.v.viewport = $(o.viewport);
 
-	if(!this.v.viewport.length) this.v.viewport = this.v.document;//in case if we have no viewport element,, or wrong selector for viewport element
+	if(!this.v.viewport.length) this.v.viewport = this.v.document;//in case if we have no viewport element, or wrong selector for viewport element
 	
-
-
 	//find element where we should set content
 	this.v.popover = this.v.wrap.find('[data-njp]');
 	if(!this.v.popover.length) {
-		throw new Error('njPopover, there is no element [data-njp].');
+		this._error('njPopover, there is no element [data-njp] in o.template.', true);
 	}
 	if(o.class) this.v.popover.addClass(o.class);
 
@@ -189,7 +182,6 @@ proto.show = function (opts) {
 		this.v.popover.html(content)
 	break;
 	case 'selector':
-		// if(!this._o.content) 
 		this._o.contentEl = $(content);
 
 		if(this._o.contentEl.length) {
@@ -201,7 +193,7 @@ proto.show = function (opts) {
 
 			this.v.popover.append(this._o.contentEl);
 		} else {
-			throw new Error('njPopover, wrong content selector or no such element.');
+			this._error('njPopover, wrong content selector or no such element.', true)
 		}
 	break;
 	}
@@ -230,7 +222,6 @@ proto.show = function (opts) {
 	} else {
 		insertPopover.call(this);
 	}
-
 	function findImgSize(img) {
 		var counter = 0,
 			interval,
@@ -276,7 +267,7 @@ proto.show = function (opts) {
 	}
 
 	function insertPopover() {
-		this.v.container.prepend(this.v.wrap);
+		this.v.container.prepend(this.v.wrap);//we prepend, not append, because append of even absolute div, changes height of body(it's bad for positioning)
 
 		//initial position
 		if(opts && opts.e) {
@@ -297,9 +288,6 @@ proto.show = function (opts) {
 
 		this._anim('show');
 	}
-
-
-
 
 	if(o.out) {
 		this.v.document.on('click.njp.njp_out_'+this._o.id, function (e) {
@@ -340,7 +328,7 @@ proto.show = function (opts) {
 proto.hide = function (opts) {
 	opts = opts || {};
 	if(this._o.state !== 'show' && this._o.state !== 'shown' && this._o.state !== 'loading') {
-		throw new Error('njPopover, hide, we can hide only showed popovers(probably animation is still running).');
+		this._error('njPopover, hide, we can hide only showed popovers(probably animation is still running).')
 	}
 
 	var o = this.o,
@@ -363,27 +351,9 @@ proto.hide = function (opts) {
 	this._anim('hide', removePopover);
 
 	function removePopover() {
-		if(that._o.contentDisplayNone) {
-			that._o.contentEl.css('display', 'none');
-			delete that._o.contentDisplayNone;
-		}
-
-		if(that._o.contentEl) {
-			that.v.body.append(that._o.contentEl);
-			delete that._o.contentEl;
-		}
-
 		that.v.wrap.remove();
 
-		delete that._o.content;
-
-		that._o.coords = {};
-
-		//delete all variables, because they generated new on every show
-		delete that.v.container;
-		delete that.v.viewport;
-		delete that.v.wrap;
-		delete that.v.popover;
+		that._clear();//remove all stuf that was made by plugin
 
 		that._cb('hidden');
 	}
@@ -391,7 +361,6 @@ proto.hide = function (opts) {
 	that.v.document.off('click.njp_out_'+that._o.id);
 	that.v.document.off('click.njp_close.njp_'+that._o.id);
 	if(o.trigger === 'follow') that.v.document.off('mousemove.njp.njp_'+that._o.id)
-
 	that.v.window.off('resize.njp_'+that._o.id);
 
 	if(o._iife) this.destroy();
@@ -401,9 +370,6 @@ proto.hide = function (opts) {
 proto.position = function (opts) {
 	opts = opts || {};
 	if(!this.v.wrap) return;//we can't set position of element, if there is no popover...
-	// if(this._o.state !== 'shown' && opts.init !== true) {
-	// 	throw new Error('njPopover, position, you can\'t position popover, while it\'s animation or loading.');
-	// }
 
 	var o = this.o,
 		that = this,
@@ -431,11 +397,12 @@ proto.position = function (opts) {
 			this._cb('positioned');
 		} else {
 			this.hide();
-			throw new Error('njPopover, final coords should be string with 2 numbers, popover position is wrong, hide popover.');
+			this._error('njPopover, final coords should be string with 2 numbers, popover position is wrong, hide popover.');
 		}
 		return;	
 	}
 
+	if(!o.elem) return;
 	//if we don't have o.coords, calculate position	
 	var eC = this._o.coords.elemCoords = getCoords(o.elem),//trigger element coordinates
 		tC = this._o.coords.popoverCoords = getCoords(this.v.wrap[0]),//popover coordinates(coordinates now fake, from this var we need outerWidth/outerHeight)
@@ -565,7 +532,6 @@ proto.position = function (opts) {
 			};
 		}
 	}
-	
 
 	this.v.wrap.css({'left':left+'px',"top":top+'px'});
 	if(opts.init) this.v.wrap.css('visibility','visible');
@@ -582,7 +548,7 @@ proto.destroy = function () {
 	var o = this.o;
 
 	if(o.elem && !o.elem.njPopover) {
-		throw new Error('njPopover, nothing to destroy, plugin not initialized.');//nothing to destroy, plugin not initialized
+		this._error('njPopover, nothing to destroy, plugin not initialized.')
 	}
 
 	this._cb('destroy');
@@ -617,8 +583,8 @@ proto.loading = function (state, content) {
 
 	switch(state) {
 	case 'on':
-		if(this._o.state === 'inited') throw new Error('njPopover, you should first show popover.');
-		if(this._o.loading) throw new Error('njPopover, popover already in loading state');
+		if(this._o.state === 'inited') this._error('njPopover, you should first show popover.');
+		if(this._o.loading) this._error('njPopover, popover already in loading state');
 		//insert content from arguments
 		if(content) {
 			if(typeof content === 'string' || typeof content === 'number') {
@@ -626,7 +592,7 @@ proto.loading = function (state, content) {
 			} else if(content.nodeType) {
 				this.v.popover.append($(content))
 			} else {
-				throw new Error('njPopover, smth wrong with argument content.');
+				this._error('njPopover, smth wrong with argument content.');
 			}
 		} else if(o.load) {
 			this.v.popover.html(o.load);
@@ -636,14 +602,14 @@ proto.loading = function (state, content) {
 		this._cb('loading');
 	break;
 	case 'off':
-		if(!this._o.loading) throw new Error('njPopover, popover not in loading state.');
+		if(!this._o.loading) this._error('njPopover, popover not in loading state.');
 		if(content) {
 			if(typeof content === 'string' || typeof content === 'number') {
 				this.v.popover.html(content);
 			} else if(content.nodeType) {
 				this.v.popover.append($(content))
 			} else {
-				throw new Error('njPopover, smth wrong with argument content.');
+				this._error('njPopover, smth wrong with argument content.');
 			}
 		} else if(this._o.contentEl) {//return orig content
 			this.v.popover.html('');
@@ -906,11 +872,9 @@ proto._anim = function (type, callback) {
 				animShowDur = parseInt(animShowDur) || 0;
 			}
 
-
-
 			this._o.showTimeout = setTimeout(function(){
 				delete that._o.showTimeout;
-				that.v.popover.removeClass('njp-show-'+animShow + ' '+ 'njp-shown-'+animShow);
+				that.v.popover.removeClass('njp-show-' + animShow + ' ' + 'njp-shown-' + animShow);
 
 				that._cb('shown');
 			}, animShowDur);
@@ -943,7 +907,37 @@ proto._anim = function (type, callback) {
 }
 
 
+proto._error = function (msg, clear) {
+	if(!msg) return;
+	throw new Error(msg);
 
+	if(clear) {
+		this._clear();
+	}
+}
+
+proto._clear = function () {
+	if(this._o.contentDisplayNone) {
+		this._o.contentEl.css('display', 'none');
+		delete this._o.contentDisplayNone;
+	}
+
+	if(this._o.contentEl) {
+		this.v.body.append(this._o.contentEl);
+		delete this._o.contentEl;
+	}
+
+
+	delete this._o.content
+	delete this._o.showTimeout
+	this._o.coords = {};
+
+	//delete all variables, because they generated new on every show
+	delete this.v.container;
+	delete this.v.viewport;
+	delete this.v.wrap;
+	delete this.v.popover;
+}
 
 
 
