@@ -123,11 +123,12 @@ proto._init = function (opts) {
 	this._cb('inited');
 }
 
-proto.show = function (opts) {
-	opts = opts || {};
+proto.show = function (e) {//e - event, it sends only when showing in trigger === 'follow' mode
 	if(this._o.state !== 'inited') {
 		this._error('njPopover, show, plugin not inited or in not inited state(probably animation is still running or plugin already visible).');
 	}
+
+	if(this._cb('show') === false) return;//callback show
 
 	var o = this.o,
 			that = this,
@@ -173,121 +174,79 @@ proto.show = function (opts) {
 	}
 	if(o.class) this.v.popover.addClass(o.class);
 
-	//set content
-	switch(o.type) {
-	case 'text':
-		this.v.popover.text(content)
-	break;
-	case 'html':
-		this.v.popover.html(content)
-	break;
-	case 'selector':
-		this._o.contentEl = $(content);
 
-		if(this._o.contentEl.length) {
-			//make element visible
-			if(this._o.contentEl.css('display') === 'none') {
-				this._o.contentEl.css('display', 'block');
-				this._o.contentDisplayNone = true;//flag shows that element we used as content, initially was hidden
-			}
-
-			this.v.popover.append(this._o.contentEl);
-		} else {
-			this._error('njPopover, wrong content selector or no such element.', true)
-		}
-	break;
-	}
-
-
-	if(this._cb('show') === false) return;//callback show
-
-
-	//wait images(see descripton of o.imgs)
-	if(typeof o.imgs === 'string') {
-		var imgs = this.v.wrap.find(o.imgs),
-			length = imgs.length,
-			readyImgs = 0;
-
-		if(length) {
-			imgs.each(function (i, el) {
-				if(o.imgsspinner) {
-					insertPopover.call(that);
-					that.loading('on');
-				}
-				findImgSize(el);
-			})
-		} else {
-			insertPopover.call(this);
-		}
+	if(o.type === 'ajax') {
+		this.loading('on', o.load);
+		this.ajax(o.content);
 	} else {
-		insertPopover.call(this);
-	}
-	function findImgSize(img) {
-		var counter = 0,
-			interval,
-			clonedImg = new Image();
-
-		clonedImg.src = img.src;
-
-		var njmSetInterval = function(delay) {
-			if(interval) {
-				clearInterval(interval);
-			}
-			interval = setInterval(function() {
-				if(clonedImg.width > 0) {
-					++readyImgs;
-
-					if(readyImgs === length) {
-						if(o.imgsspinner) {
-							that.loading('off');
-						} else {
-							insertPopover.call(that);
-						}
-					}
-
-					clearInterval(interval);
-					return;
-				}
-
-				if(counter > 200) {
-					clearInterval(interval);
-				}
-
-				counter++;
-				if(counter === 3) {
-					njmSetInterval(10);
-				} else if(counter === 40) {
-					njmSetInterval(50);
-				} else if(counter === 100) {
-					njmSetInterval(500);
-				}
-			}, delay);
-		};
-		njmSetInterval(1);
+		this._insertContent(content);
 	}
 
-	function insertPopover() {
-		this.v.container.prepend(this.v.wrap);//we prepend, not append, because append of even absolute div, changes height of body(it's bad for positioning)
+	this._insertPopover(true, e);
 
-		//initial position
-		if(opts && opts.e) {
-			that.position({init:true, e:opts.e, coords: o.coords});
-		} else {
-			that.position({init:true, coords: o.coords});
-		}
+	// //wait images(see descripton of o.imgs)
+	// if(typeof o.imgs === 'string') {
+	// 	var imgs = this.v.wrap.find(o.imgs),
+	// 		length = imgs.length,
+	// 		readyImgs = 0;
 
-		//i don't know why, but elem.getBoundingClientRect used on elem stops any future transitions(june 2015), thats why after position, we hides and show elem again,
-		// also working next method:
-		// this.v.wrap.remove();
-		// this.v.container.prepend(this.v.wrap);
+	// 	if(length) {
+	// 		imgs.each(function (i, el) {
+	// 			if(o.imgsspinner) {
+	// 				insertPopover.call(that);
+	// 				that.loading('on');
+	// 			}
+	// 			findImgSize(el);
+	// 		})
+	// 	} else {
+	// 		insertPopover.call(this);
+	// 	}
+	// } else {
+	// 	insertPopover.call(this);
+	// }
+	// function findImgSize(img) {
+	// 	var counter = 0,
+	// 		interval,
+	// 		clonedImg = new Image();
 
-		//this is working in all browsers
-		this.v.wrap.css('display','none');
-		this.v.wrap[0].clientHeight;//force relayout
-		this.v.wrap.css('display','block');
+	// 	clonedImg.src = img.src;
 
-		this._anim('show');
-	}
+	// 	var njmSetInterval = function(delay) {
+	// 		if(interval) {
+	// 			clearInterval(interval);
+	// 		}
+	// 		interval = setInterval(function() {
+	// 			if(clonedImg.width > 0) {
+	// 				++readyImgs;
+
+	// 				if(readyImgs === length) {
+	// 					if(o.imgsspinner) {
+	// 						that.loading('off');
+	// 					} else {
+	// 						insertPopover.call(that);
+	// 					}
+	// 				}
+
+	// 				clearInterval(interval);
+	// 				return;
+	// 			}
+
+	// 			if(counter > 200) {
+	// 				clearInterval(interval);
+	// 			}
+
+	// 			counter++;
+	// 			if(counter === 3) {
+	// 				njmSetInterval(10);
+	// 			} else if(counter === 40) {
+	// 				njmSetInterval(50);
+	// 			} else if(counter === 100) {
+	// 				njmSetInterval(500);
+	// 			}
+	// 		}, delay);
+	// 	};
+	// 	njmSetInterval(1);
+	// }
 
 	if(o.out) {
 		this.v.document.on('click.njp.njp_out_'+this._o.id, function (e) {
@@ -324,12 +283,154 @@ proto.show = function (opts) {
 
 	return this;
 }
+proto.ajax = function (url) {
+	if(!url) return;
+
+	var o = this.o,
+		that = this;
+
+	if(url === 'stop') {
+		if(!this._o.xhr) this._error('njPopover, there is no active ajax request.');
+		if(this.readyState === 4) this._error('njPopover, can\'t abort finished request.');
+
+		this._o.xhr.aborted = true;//needed for disable error handler
+		this._o.xhr.abort();
+	}
+
+
+	this._o.xhr = new(XMLHttpRequest || ActiveXObject)("Microsoft.XMLHTTP");
+
+
+	this._o.xhr.onabort = this._o.xhr.ajax_abort = function () {
+		console.log('ajax - abort')
+
+		this._o.xhr.onabort = null;
+		ajax_clear();
+	}
+	
+	this._o.xhr.onerror = this._o.xhr.ajax_error = function () {
+		if(this._o.xhr.aborted) return;
+
+		console.log('ajax - error');
+
+		this._o.xhr.onerror = null;
+		ajax_clear();
+	}
+
+	this._o.xhr.ajax_timeout = function () {
+		console.log('ajax - timeout')
+		clearTimeout(that._o.xhrTimeout);
+
+		that.ajax('stop');
+	}
+
+	this._o.xhrTimeout = setTimeout( this._o.xhr.ajax_timeout, o.timeout);
+
+	var response;
+
+	this._o.xhr.onreadystatechange = function () {
+		if(this.aborted) {
+			this.ajax_abort();//for ie <=9, for some reason it not fires automatically
+			clearTimeout(that._o.xhrTimeout);
+			return;
+		}
+
+		if(this.readyState === 4) {
+			if(this.status == 200) {
+				clearTimeout(that._o.xhrTimeout);
+
+				if(o.ajaxHandler) {
+					var t = {
+						data: this.responseText,
+						xhr: this
+					};
+					if(o.ajaxHandler) {
+						o.ajaxHandler.call(that, t, that)
+					}
+
+					response = t.data;
+				} else {
+					response = this.responseText;
+				}
+
+				that.loading('off', response);
+			} else {
+				this.ajax_error();
+			}
+		}
+	}
+
+	if(this._o.xhr) {
+		this._o.xhr.open("GET", url, true);
+		this._o.xhr.send(null);
+	}
+
+
+	function ajax_clear() {
+		insertContent();
+	}
+
+}
+
+proto._insertContent = function (content) {
+	var  o = this.o;
+	//set content
+	switch(o.type) {
+	case 'text':
+		this.v.popover.text(content)
+	break;
+	case 'html':
+		this.v.popover.html(content)
+	break;
+	case 'selector':
+		this._o.contentEl = $(content);
+
+		if(this._o.contentEl.length) {
+			//make element visible
+			if(this._o.contentEl.css('display') === 'none') {
+				this._o.contentEl.css('display', 'block');
+				this._o.contentDisplayNone = true;//flag shows that element we used as content, initially was hidden
+			}
+
+			this.v.popover.append(this._o.contentEl);
+		} else {
+			this._error('njPopover, wrong content selector or no such element.', true)
+		}
+	break;
+	}
+}
+
+proto._insertPopover = function (anim, e) {
+	var o = this.o,
+		that = this;
+
+	this.v.container.prepend(this.v.wrap);//we prepend, not append, because append of even absolute div, changes height of body(it's bad for positioning)
+
+	//initial position
+	this.position({init:true, e:e, coords: o.coords});
+
+	//i don't know why, but elem.getBoundingClientRect used on elem stops any future transitions(june 2015), thats why after position, we hides and show elem again,
+	// also working next method:
+	// this.v.wrap.remove();
+	// this.v.container.prepend(this.v.wrap);
+
+	//this is working in all browsers
+	this.v.wrap.css('display','none');
+	this.v.wrap[0].clientHeight;//force relayout
+	this.v.wrap.css('display','block');
+
+	if(anim) {
+		this._anim('show');
+	}
+}
 
 proto.hide = function (opts) {
 	opts = opts || {};
 	if(this._o.state !== 'show' && this._o.state !== 'shown' && this._o.state !== 'loading') {
-		this._error('njPopover, hide, we can hide only showed popovers(probably animation is still running).')
+		this._error('njPopover, hide, we can hide only showed popovers (probably animation is still running).')
 	}
+
+	if(this._cb('hide') === false) return;//callback hide
 
 	var o = this.o,
 		that = this;
@@ -345,9 +446,6 @@ proto.hide = function (opts) {
 		}
 	}
 
-	if(this._cb('hide') === false) return;//callback hide
-
-
 	this._anim('hide', removePopover);
 
 	function removePopover() {
@@ -360,7 +458,10 @@ proto.hide = function (opts) {
 
 	that.v.document.off('click.njp_out_'+that._o.id);
 	that.v.document.off('click.njp_close.njp_'+that._o.id);
-	if(o.trigger === 'follow') that.v.document.off('mousemove.njp.njp_'+that._o.id)
+	if(o.trigger === 'follow') {
+		that.v.document.off('mousemove.njp.njp_'+that._o.id)
+		that.v.document.off('mouseleave.njp.njp_'+that._o.id)
+	}
 	that.v.window.off('resize.njp_'+that._o.id);
 
 	if(o._iife) this.destroy();
@@ -585,6 +686,7 @@ proto.loading = function (state, content) {
 	case 'on':
 		if(this._o.state === 'inited') this._error('njPopover, you should first show popover.');
 		if(this._o.loading) this._error('njPopover, popover already in loading state');
+
 		//insert content from arguments
 		if(content) {
 			if(typeof content === 'string' || typeof content === 'number') {
@@ -594,9 +696,11 @@ proto.loading = function (state, content) {
 			} else {
 				this._error('njPopover, smth wrong with argument content.');
 			}
-		} else if(o.load) {
+		} else {
+			if(!o.load) this._error('njPopover, you do not specify the content for inserting and o.load option is false.');
 			this.v.popover.html(o.load);
 		}
+
 		this.position({coords: o.coords});
 
 		this._cb('loading');
@@ -615,6 +719,7 @@ proto.loading = function (state, content) {
 			this.v.popover.html('');
 			this.v.popover.append(this._o.contentEl);
 		} else if(this._o.content) {
+			console.log('insert old content')
 			this.v.popover.html(this._o.content);
 		}
 		this.position({coords: o.coords});
@@ -669,7 +774,6 @@ proto._setTrigger = function () {
 		case 'follow':
 		case 'hover':
 			o.$elem.on('mouseenter.njp.njp_'+that._o.id, function (e) {
-				console.log('enter')
 				//don't fire show event, when show mouse came from popover on element(case when popover not placed in container(document))
 				if(that.v.wrap && that.v.popover) {
 					if(!$(e.relatedTarget).closest('[data-njp-wrap]').length) {
@@ -746,7 +850,7 @@ proto._gatherData = function (first) {//first - only first, initial data gather
 		dataO = el.data(),//data original
 		dataMeta = {},//data processed
 
-		numeric = ['margin','zindex'],//properties that we should transform from string to number
+		numeric = ['margin','zindex','timeout'],//properties that we should transform from string to number
 		initial = ['trigger','attr'],//properties that we can define only first time, on init gather data
 		banned = ['elem','autobind'];//properties that we can't redefine via data attributes at all
 
@@ -873,7 +977,9 @@ proto._anim = function (type, callback) {
 			}
 
 			this._o.showTimeout = setTimeout(function(){
+				clearTimeout(that._o.showTimeout);
 				delete that._o.showTimeout;
+
 				that.v.popover.removeClass('njp-show-' + animShow + ' ' + 'njp-shown-' + animShow);
 
 				that._cb('shown');
@@ -905,7 +1011,6 @@ proto._anim = function (type, callback) {
 	break;
 	}
 }
-
 
 proto._error = function (msg, clear) {
 	if(!msg) return;
@@ -1011,7 +1116,11 @@ njPopover.defaults = {
 	anim: 'fade',//(false || string) name of animation, or string with space separated 2 names of show/hide animation
 	duration: 'auto',//(string || number || auto) duration of animation, or string with space separated 2 duration of show/hide animation. You can set 'auto 100' if you want to set only duration for hide
 
-	load: '<img src="img/spinner.gif" alt="loading" />',//(html) html of element that will be used as content for loading status
+	// load: '<img src="img/spinner.gif" alt="loading" />',//(html) html of element that will be used as content for loading status
+	load: 'loading...',//(html) html of element that will be used as content for loading status
+	timeout: 2000,//(number) ajax timeout
+	// ajaxHandler: function() {},//(function) callback that will be fired when ajax complete
+
 	imgs: '[data-njp-img]',//(boolean false || selector) if imgs selector is presented, plugin will find images matches to this selector in popover, and wait until they begin downloading(to know it's size), only than show popover 
 	imgsspinner: true,//(boolean) if imgs option is used, this option options instead of delay, show spinner or loading text in popover
 

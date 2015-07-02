@@ -1,3 +1,6 @@
+//переработать position, что бы не нужно было каждый раз передавать coords
+//проверить и описать ajaxHandler
+//переделать timeout-ы на transitionEnd/animationEnd, просто определять наидлиннейший транзишен и на него биндить
 //в hide, почему-то не закрывать пока state loading
 //пофиксить глобальные функции last, hide
 //adapters to prototype, ember - opentip
