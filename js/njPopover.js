@@ -176,7 +176,6 @@ proto.show = function (e) {//e - event, it sends only when showing in trigger ==
 
 
 	if(o.type === 'ajax') {
-		this.loading('on', o.load);
 		this.ajax(o.content);
 	} else {
 		this._insertContent(content);
@@ -285,35 +284,44 @@ proto.show = function (e) {//e - event, it sends only when showing in trigger ==
 }
 proto.ajax = function (url) {
 	if(!url) return;
+	
 
 	var o = this.o,
 		that = this;
 
 	if(url === 'stop') {
-		if(!this._o.xhr) this._error('njPopover, there is no active ajax request.');
-		if(this.readyState === 4) this._error('njPopover, can\'t abort finished request.');
+		// if(!this._o.xhr) this._error('njPopover, there is no active ajax request.');
+		// if(this.readyState === 4) this._error('njPopover, can\'t abort finished request.');
+		if(!this._o.xhr) return;
+		if(this.readyState === 4) return;
 
 		this._o.xhr.aborted = true;//needed for disable error handler
 		this._o.xhr.abort();
+
+		return;
 	}
 
+	if(this._o.state !== 'inited' && this._o.state !== 'show' && this._o.state !== 'shown') {
+		this._error('njPopover, ajax can be used only on shown popover.');
+	}
 
+	this.loading('on', o.load);
 	this._o.xhr = new(XMLHttpRequest || ActiveXObject)("Microsoft.XMLHTTP");
 
 
 	this._o.xhr.onabort = this._o.xhr.ajax_abort = function () {
 		console.log('ajax - abort')
 
-		this._o.xhr.onabort = null;
+		this.onabort = null;
 		ajax_clear();
 	}
 	
 	this._o.xhr.onerror = this._o.xhr.ajax_error = function () {
-		if(this._o.xhr.aborted) return;
+		if(this.aborted) return;
 
 		console.log('ajax - error');
 
-		this._o.xhr.onerror = null;
+		this.onerror = null;
 		ajax_clear();
 	}
 
@@ -330,7 +338,7 @@ proto.ajax = function (url) {
 
 	this._o.xhr.onreadystatechange = function () {
 		if(this.aborted) {
-			this.ajax_abort();//for ie <=9, for some reason it not fires automatically
+			this._o.xhr.onabort();//for ie <=9, for some reason it not fires automatically
 			clearTimeout(that._o.xhrTimeout);
 			return;
 		}
@@ -367,9 +375,11 @@ proto.ajax = function (url) {
 
 
 	function ajax_clear() {
-		insertContent();
+		clearTimeout(that._o.xhrTimeout);
+		that.loading('off', 'njPopover, ajax fail from this url: '+that._o.content);
 	}
 
+	return this;
 }
 
 proto._insertContent = function (content) {
@@ -407,14 +417,9 @@ proto._insertPopover = function (anim, e) {
 	this.v.container.prepend(this.v.wrap);//we prepend, not append, because append of even absolute div, changes height of body(it's bad for positioning)
 
 	//initial position
-	this.position({init:true, e:e, coords: o.coords});
+	this.position(e);
 
-	//i don't know why, but elem.getBoundingClientRect used on elem stops any future transitions(june 2015), thats why after position, we hides and show elem again,
-	// also working next method:
-	// this.v.wrap.remove();
-	// this.v.container.prepend(this.v.wrap);
-
-	//this is working in all browsers
+	//i don't know why, but elem.getBoundingClientRect used on elem stops any future transitions(june 2015), thats why after position, we hides and show elem again(also we can remove and append element again)
 	this.v.wrap.css('display','none');
 	this.v.wrap[0].clientHeight;//force relayout
 	this.v.wrap.css('display','block');
@@ -424,8 +429,7 @@ proto._insertPopover = function (anim, e) {
 	}
 }
 
-proto.hide = function (opts) {
-	opts = opts || {};
+proto.hide = function () {
 	if(this._o.state !== 'show' && this._o.state !== 'shown' && this._o.state !== 'loading') {
 		this._error('njPopover, hide, we can hide only showed popovers (probably animation is still running).')
 	}
@@ -468,8 +472,8 @@ proto.hide = function (opts) {
 	return this;
 }
 
-proto.position = function (opts) {
-	opts = opts || {};
+proto.position = function (e) {
+	var opts = opts || {};
 	if(!this.v.wrap) return;//we can't set position of element, if there is no popover...
 
 	var o = this.o,
@@ -478,7 +482,8 @@ proto.position = function (opts) {
 
 	(typeof o.margin === 'number') ? o.margin = o.margin : o.margin = 0;
 
-	opts.coords = opts.coords || this._cb('position');
+	opts.coords = opts.coords || this._cb('position') || o.coords;
+	opts.e = e;
 	
 	//if we have option with coordinates, use this coords
 	if(opts.coords) {
@@ -490,7 +495,6 @@ proto.position = function (opts) {
 		
 		if($.isArray(coords) && coords.length === 2 && this._isNumber(coords[0]) && this._isNumber(coords[1])) {
 			this.v.wrap.css({'left' : parseFloat(coords[0])+'px',"top" : parseFloat(coords[1])+'px'});
-			if(opts.init) this.v.wrap.css('visibility','visible');
 
 			//remember proper coordinates
 			this._o.coords.popoverCoords = getCoords(this.v.wrap[0]);
@@ -701,7 +705,7 @@ proto.loading = function (state, content) {
 			this.v.popover.html(o.load);
 		}
 
-		this.position({coords: o.coords});
+		this.position();
 
 		this._cb('loading');
 	break;
@@ -722,7 +726,7 @@ proto.loading = function (state, content) {
 			console.log('insert old content')
 			this.v.popover.html(this._o.content);
 		}
-		this.position({coords: o.coords});
+		this.position();
 
 
 		this._cb('loaded');
@@ -785,7 +789,7 @@ proto._setTrigger = function () {
 				
 				if(o.trigger === 'follow') {
 					that.v.document.on('mousemove.njp.njp_'+that._o.id, function (e) {
-						that.position({e:e});
+						that.position(e);
 					})
 				}
 			})
@@ -905,7 +909,7 @@ proto._gatherData = function (first) {//first - only first, initial data gather
 	$.extend(true, o, dataMeta);//extend original options with gathered
 }
 
-proto._getMaxTransitionDuration = function (el, property) {//it allso can get animation duration
+proto._getMaxTransitionDuration = function (el, property) {//method also can get animation duration
 	var $el = $(el),
 		dur,
 		durArr,
@@ -966,6 +970,10 @@ proto._anim = function (type, callback) {
 	switch(type) {
 	case 'show':
 		if(animShow) {
+			if(this.v.wrap.css('visibility') === 'hidden') {
+				this.v.wrap.css('visibility','visible');
+			}
+
 			this.v.popover.addClass('njp-show-'+animShow);
 			this.v.popover[0].clientHeight;//force relayout
 			this.v.popover.addClass('njp-shown-'+animShow);
@@ -1036,6 +1044,10 @@ proto._clear = function () {
 	delete this._o.content
 	delete this._o.showTimeout
 	this._o.coords = {};
+	delete this._o.loading;
+
+	delete this._o.xhr;
+	delete this._o.xhrTimeout;
 
 	//delete all variables, because they generated new on every show
 	delete this.v.container;
