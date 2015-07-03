@@ -144,7 +144,7 @@ proto.show = function () {//e - event, it sends only when showing in trigger ===
 	}
 	this._o.content = content;//save computed content (needed for loading)
 
-	if(!content || (typeof content !== 'string' && typeof content !== 'number')) {
+	if(!content) {
 		this._error('njPopover, no content for popover.', true);
 	}
 
@@ -176,19 +176,53 @@ proto.show = function () {//e - event, it sends only when showing in trigger ===
 	if(o.class) this.v.popover.addClass(o.class);
 
 
-	if(o.type === 'ajax' || typeof o.imgs === 'string') {
-		if(njPopover.a.extended) {
-			this._insertContent(o.load || 'loading');
+	//set content
+	switch(o.type) {
+	case 'html':
+		this.v.popover.html(content)
+	break;
+	case 'selector':
+		this._o.contentEl = $(content);
+
+		if(this._o.contentEl.length) {
+			//make element visible
+			if(this._o.contentEl.css('display') === 'none') {
+				this._o.contentEl.css('display', 'block');
+				this._o.contentDisplayNone = true;//flag shows that element we used as content, initially was hidden
+			}
+
+			this.v.popover.append(this._o.contentEl);
 		} else {
-			this._error('njPopover, you should use njPopover extended addon to use ajax.', true);
+			this._error('njPopover, wrong content selector or no such element.', true)
 		}
-	} else {
-		this._insertContent(content);
+	break;
 	}
 
+	if(typeof o.imgs === 'string') {
+		if(njPopover.a.extended) {
+			this._waitImgs('popover');
+		} else {
+			this._error('njPopover, you should use njPopover extended addon to use ajax or o.imgs.', true);
+		}
+	} else if(o.type === 'ajax') {
+		
+	}
+
+
+
+	
 	this._insertPopover();
+
+
+
+
 	
 
+	// if(o.type === 'ajax') {
+	// 	this.ajax(o.content);
+	// } else if(typeof o.imgs === 'string') {
+	// 	this._waitImgs('popover');
+	// }
 
 	// if(o.type === 'ajax') {
 	// 	if(njPopover.a.extended) {//if we have ajax addon
@@ -249,35 +283,6 @@ proto.show = function () {//e - event, it sends only when showing in trigger ===
 	})
 
 	return this;
-}
-
-proto._insertContent = function (content) {
-	var  o = this.o;
-
-	//set content
-	switch(o.type) {
-	case 'text':
-		this.v.popover.text(content)
-	break;
-	case 'html':
-		this.v.popover.html(content)
-	break;
-	case 'selector':
-		this._o.contentEl = $(content);
-
-		if(this._o.contentEl.length) {
-			//make element visible
-			if(this._o.contentEl.css('display') === 'none') {
-				this._o.contentEl.css('display', 'block');
-				this._o.contentDisplayNone = true;//flag shows that element we used as content, initially was hidden
-			}
-
-			this.v.popover.append(this._o.contentEl);
-		} else {
-			this._error('njPopover, wrong content selector or no such element.', true)
-		}
-	break;
-	}
 }
 
 proto._insertPopover = function (e) {
@@ -509,7 +514,7 @@ proto.position = function (e) {
 	}
 
 	this.v.wrap.css({'left':left+'px',"top":top+'px'});
-	if(opts.init) this.v.wrap.css('visibility','visible');
+	
 
 	//remember proper coordinates
 	this._o.coords.popoverCoords = getCoords(this.v.wrap[0]);
@@ -748,11 +753,8 @@ proto._anim = function (type, callback) {
 	switch(type) {
 	case 'show':
 		if(animShow) {
-			if(this.v.wrap.css('visibility') === 'hidden') {
-				this.v.wrap.css('visibility','visible');
-			}
-
 			this.v.popover.addClass('njp-show-'+animShow);
+			if(this.v.wrap.css('visibility') === 'hidden') this.v.wrap.css('visibility','visible');
 			this.v.popover[0].clientHeight;//force relayout
 			this.v.popover.addClass('njp-shown-'+animShow);
 
@@ -896,7 +898,7 @@ njPopover.defaults = {
 
 	template:'<div class="njp-wrap" data-njp-wrap style="position:absolute;"><div class="njp" data-njp></div></div>',//(string) base HTML to use when creating the popover
 	attr: 'title',//get content for popover from this attribute, if there is no o.content option
-	type: 'text',//(text || html || selector) type of content, if selector used, whole element will be inserted in tooltip
+	type: 'html',//(html || selector) type of content, if selector used, whole element will be inserted in tooltip
 	content: '',//(string || function) content for popover
 	class: false,//(string) classnames(separated with space) that will be added to popover
 
