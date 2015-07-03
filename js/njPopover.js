@@ -124,7 +124,7 @@ proto._init = function (opts) {
 	this._cb('inited');
 }
 
-proto.show = function (e) {//e - event, it sends only when showing in trigger === 'follow' mode
+proto.show = function () {//e - event, it sends only when showing in trigger === 'follow' mode
 	if(this._o.state !== 'inited') {
 		this._error('njPopover, show, plugin not inited or in not inited state(probably animation is still running or plugin already visible).');
 	}
@@ -176,10 +176,9 @@ proto.show = function (e) {//e - event, it sends only when showing in trigger ==
 	if(o.class) this.v.popover.addClass(o.class);
 
 
-
-	if(o.type === 'ajax') {
-		if(njPopover.a.extended) {//if we have ajax addon
-			this.ajax(o.content);
+	if(o.type === 'ajax' || typeof o.imgs === 'string') {
+		if(njPopover.a.extended) {
+			this._insertContent(o.load || 'loading');
 		} else {
 			this._error('njPopover, you should use njPopover extended addon to use ajax.', true);
 		}
@@ -187,19 +186,34 @@ proto.show = function (e) {//e - event, it sends only when showing in trigger ==
 		this._insertContent(content);
 	}
 
-	if(typeof o.imgs === 'string') {
-		if(njPopover.a.extended) {
-			this._waitImgs({
-				callback: 'popover',
-				args: [true, e],
-				e: e
-			});
-		} else {
-			this._error('njPopover, you should use njPopover extended addon to use o.imgs', true);
-		}
-	} else {
-		this._insertPopover(true, e);
-	}
+	this._insertPopover();
+	
+
+
+	// if(o.type === 'ajax') {
+	// 	if(njPopover.a.extended) {//if we have ajax addon
+	// 		this.ajax(o.content);
+	// 	} else {
+	// 		this._error('njPopover, you should use njPopover extended addon to use ajax.', true);
+	// 	}
+	// } else {
+	// 	this._insertContent(content);
+	// }
+
+	// if(typeof o.imgs === 'string') {
+	// 	if(njPopover.a.extended) {
+	// 		this._waitImgs({
+	// 			callback: 'popover',
+	// 		});
+	// 	} else {
+	// 		this._error('njPopover, you should use njPopover extended addon to use o.imgs', true);
+	// 	}
+	// } else {
+	// 	this._insertPopover(e);
+	// }
+
+
+
 
 	if(o.out) {
 		this.v.document.on('click.njp.njp_out_'+this._o.id, function (e) {
@@ -239,6 +253,7 @@ proto.show = function (e) {//e - event, it sends only when showing in trigger ==
 
 proto._insertContent = function (content) {
 	var  o = this.o;
+
 	//set content
 	switch(o.type) {
 	case 'text':
@@ -265,7 +280,7 @@ proto._insertContent = function (content) {
 	}
 }
 
-proto._insertPopover = function (anim, e) {
+proto._insertPopover = function (e) {
 	var o = this.o,
 		that = this;
 
@@ -564,10 +579,10 @@ proto._setTrigger = function () {
 				//don't fire show event, when show mouse came from popover on element(case when popover not placed in container(document))
 				if(that.v.wrap && that.v.popover) {
 					if(!$(e.relatedTarget).closest('[data-njp-wrap]').length) {
-						that.show({e:e});
+						that.show();
 					}
 				} else {
-					that.show({e:e});
+					that.show();
 				}
 				
 				if(o.trigger === 'follow') {
@@ -741,17 +756,19 @@ proto._anim = function (type, callback) {
 			this.v.popover[0].clientHeight;//force relayout
 			this.v.popover.addClass('njp-shown-'+animShow);
 
+
 			if(!animShowDur || animShowDur === 'auto') {
 				animShowDur = that._getMaxTransitionDuration(this.v.popover[0], 'animationDuration') || that._getMaxTransitionDuration(this.v.popover[0], 'transitionDuration');
 			} else {//if duration was set via options, transform it to number
 				animShowDur = parseInt(animShowDur) || 0;
 			}
 
+
 			this._o.showTimeout = setTimeout(function(){
 				clearTimeout(that._o.showTimeout);
 				delete that._o.showTimeout;
 
-				that.v.popover.removeClass('njp-show-' + animShow + ' ' + 'njp-shown-' + animShow);
+				// that.v.popover.removeClass('njp-show-' + animShow + ' ' + 'njp-shown-' + animShow);
 
 				that._cb('shown');
 			}, animShowDur);
