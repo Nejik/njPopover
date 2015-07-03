@@ -49,6 +49,7 @@ njPopover.instances =	{//we make array like object with all active instances of 
 							length:0
 						}
 
+njPopover.a = {};//addons
 
 njPopover.getLast = njPopover.last = function () {//public function that returns last instance of popover
 	return njPopover.instances[njPopover.instances.length - 1];
@@ -70,7 +71,7 @@ proto._init = function (opts) {
 		that = this;
 
 	this._o = {//inner options
-		'coords':{},
+		'coords':{}
 	};
 
 	this.v = {//object with cached variables
@@ -175,77 +176,30 @@ proto.show = function (e) {//e - event, it sends only when showing in trigger ==
 	if(o.class) this.v.popover.addClass(o.class);
 
 
+
 	if(o.type === 'ajax') {
-		this.ajax(o.content);
+		if(njPopover.a.extended) {//if we have ajax addon
+			this.ajax(o.content);
+		} else {
+			this._error('njPopover, you should use njPopover extended addon to use ajax.', true);
+		}
 	} else {
 		this._insertContent(content);
 	}
 
-	this._insertPopover(true, e);
-
-	// //wait images(see descripton of o.imgs)
-	// if(typeof o.imgs === 'string') {
-	// 	var imgs = this.v.wrap.find(o.imgs),
-	// 		length = imgs.length,
-	// 		readyImgs = 0;
-
-	// 	if(length) {
-	// 		imgs.each(function (i, el) {
-	// 			if(o.imgsspinner) {
-	// 				insertPopover.call(that);
-	// 				that.loading('on');
-	// 			}
-	// 			findImgSize(el);
-	// 		})
-	// 	} else {
-	// 		insertPopover.call(this);
-	// 	}
-	// } else {
-	// 	insertPopover.call(this);
-	// }
-	// function findImgSize(img) {
-	// 	var counter = 0,
-	// 		interval,
-	// 		clonedImg = new Image();
-
-	// 	clonedImg.src = img.src;
-
-	// 	var njmSetInterval = function(delay) {
-	// 		if(interval) {
-	// 			clearInterval(interval);
-	// 		}
-	// 		interval = setInterval(function() {
-	// 			if(clonedImg.width > 0) {
-	// 				++readyImgs;
-
-	// 				if(readyImgs === length) {
-	// 					if(o.imgsspinner) {
-	// 						that.loading('off');
-	// 					} else {
-	// 						insertPopover.call(that);
-	// 					}
-	// 				}
-
-	// 				clearInterval(interval);
-	// 				return;
-	// 			}
-
-	// 			if(counter > 200) {
-	// 				clearInterval(interval);
-	// 			}
-
-	// 			counter++;
-	// 			if(counter === 3) {
-	// 				njmSetInterval(10);
-	// 			} else if(counter === 40) {
-	// 				njmSetInterval(50);
-	// 			} else if(counter === 100) {
-	// 				njmSetInterval(500);
-	// 			}
-	// 		}, delay);
-	// 	};
-	// 	njmSetInterval(1);
-	// }
+	if(typeof o.imgs === 'string') {
+		if(njPopover.a.extended) {
+			this._waitImgs({
+				callback: 'popover',
+				args: [true, e],
+				e: e
+			});
+		} else {
+			this._error('njPopover, you should use njPopover extended addon to use o.imgs', true);
+		}
+	} else {
+		this._insertPopover(true, e);
+	}
 
 	if(o.out) {
 		this.v.document.on('click.njp.njp_out_'+this._o.id, function (e) {
@@ -279,105 +233,6 @@ proto.show = function (e) {//e - event, it sends only when showing in trigger ==
 	this.v.document.on('click.njp_close.njp_'+this._o.id, '[data-njp-close]', function () {
 		that.hide();
 	})
-
-	return this;
-}
-proto.ajax = function (url) {
-	if(!url) return;
-	
-
-	var o = this.o,
-		that = this;
-
-	if(url === 'stop') {
-		// if(!this._o.xhr) this._error('njPopover, there is no active ajax request.');
-		// if(this.readyState === 4) this._error('njPopover, can\'t abort finished request.');
-		if(!this._o.xhr) return;
-		if(this.readyState === 4) return;
-
-		this._o.xhr.aborted = true;//needed for disable error handler
-		this._o.xhr.abort();
-
-		return;
-	}
-
-	if(this._o.state !== 'inited' && this._o.state !== 'show' && this._o.state !== 'shown') {
-		this._error('njPopover, ajax can be used only on shown popover.');
-	}
-
-	this.loading('on', o.load);
-	this._o.xhr = new(XMLHttpRequest || ActiveXObject)("Microsoft.XMLHTTP");
-
-
-	this._o.xhr.onabort = this._o.xhr.ajax_abort = function () {
-		console.log('ajax - abort')
-
-		this.onabort = null;
-		ajax_clear();
-	}
-	
-	this._o.xhr.onerror = this._o.xhr.ajax_error = function () {
-		if(this.aborted) return;
-
-		console.log('ajax - error');
-
-		this.onerror = null;
-		ajax_clear();
-	}
-
-	this._o.xhr.ajax_timeout = function () {
-		console.log('ajax - timeout')
-		clearTimeout(that._o.xhrTimeout);
-
-		that.ajax('stop');
-	}
-
-	this._o.xhrTimeout = setTimeout( this._o.xhr.ajax_timeout, o.timeout);
-
-	var response;
-
-	this._o.xhr.onreadystatechange = function () {
-		if(this.aborted) {
-			this._o.xhr.onabort();//for ie <=9, for some reason it not fires automatically
-			clearTimeout(that._o.xhrTimeout);
-			return;
-		}
-
-		if(this.readyState === 4) {
-			if(this.status == 200) {
-				clearTimeout(that._o.xhrTimeout);
-
-				if(o.ajaxHandler) {
-					var t = {
-						data: this.responseText,
-						xhr: this
-					};
-					if(o.ajaxHandler) {
-						o.ajaxHandler.call(that, t, that)
-					}
-
-					response = t.data;
-				} else {
-					response = this.responseText;
-				}
-
-				that.loading('off', response);
-			} else {
-				this.ajax_error();
-			}
-		}
-	}
-
-	if(this._o.xhr) {
-		this._o.xhr.open("GET", url, true);
-		this._o.xhr.send(null);
-	}
-
-
-	function ajax_clear() {
-		clearTimeout(that._o.xhrTimeout);
-		that.loading('off', 'njPopover, ajax fail from this url: '+that._o.content);
-	}
 
 	return this;
 }
@@ -424,9 +279,9 @@ proto._insertPopover = function (anim, e) {
 	this.v.wrap[0].clientHeight;//force relayout
 	this.v.wrap.css('display','block');
 
-	if(anim) {
+	// if(anim) {
 		this._anim('show');
-	}
+	// }
 }
 
 proto.hide = function () {
@@ -683,81 +538,9 @@ proto.destroy = function () {
 	}
 }
 
-proto.loading = function (state, content) {
-	var o = this.o;
-
-	switch(state) {
-	case 'on':
-		if(this._o.state === 'inited') this._error('njPopover, you should first show popover.');
-		if(this._o.loading) this._error('njPopover, popover already in loading state');
-
-		//insert content from arguments
-		if(content) {
-			if(typeof content === 'string' || typeof content === 'number') {
-				this.v.popover.html(content);
-			} else if(content.nodeType) {
-				this.v.popover.append($(content))
-			} else {
-				this._error('njPopover, smth wrong with argument content.');
-			}
-		} else {
-			if(!o.load) this._error('njPopover, you do not specify the content for inserting and o.load option is false.');
-			this.v.popover.html(o.load);
-		}
-
-		this.position();
-
-		this._cb('loading');
-	break;
-	case 'off':
-		if(!this._o.loading) this._error('njPopover, popover not in loading state.');
-		if(content) {
-			if(typeof content === 'string' || typeof content === 'number') {
-				this.v.popover.html(content);
-			} else if(content.nodeType) {
-				this.v.popover.append($(content))
-			} else {
-				this._error('njPopover, smth wrong with argument content.');
-			}
-		} else if(this._o.contentEl) {//return orig content
-			this.v.popover.html('');
-			this.v.popover.append(this._o.contentEl);
-		} else if(this._o.content) {
-			console.log('insert old content')
-			this.v.popover.html(this._o.content);
-		}
-		this.position();
 
 
-		this._cb('loaded');
-	break;
-	}
 
-	return this;
-}
-
-proto.options = function (opts) {
-	if(!opts) return;
-
-	var o = this.o,
-		banned = ['elem','autobind','attr'];
-
-	if(this._o.trigger) {
-		this._removeTrigger();
-		this.o.trigger = opts.trigger;
-		this._setTrigger();
-	}
-
-	//delete options, that we can't redefine
-	for (var i = 0, l = banned.length; i < l ;i++) {
-		delete opts[banned[i]];
-	}
-
-
-	this.o = $.extend(true, this.o, opts);
-
-	return this;
-}
 
 proto._setTrigger = function () {
 	var o = this.o,
@@ -826,27 +609,7 @@ proto._setTrigger = function () {
 	}
 }
 
-proto._removeTrigger = function () {
-	var  o = this.o;
 
-	if(!this._o.trigger) return;
-
-	switch(this._o.trigger) {
-	case 'click':
-		o.$elem.off('click.njp.njp_'+this._o.id);
-	break;
-	case 'follow':
-	case 'hover':
-		o.$elem.off('mouseenter.njp.njp_'+this._o.id);
-		o.$elem.off('mouseleave.njp.njp_'+this._o.id);
-	break;
-	case 'focus':
-		o.$elem.off('focus.njp.njp_'+this._o.id);
-		o.$elem.off('blur.njp.njp_'+this._o.id);
-	break;
-	}
-	delete this._o.trigger;
-}
 
 proto._gatherData = function (first) {//first - only first, initial data gather
 	var o = this.o,
@@ -1022,11 +785,12 @@ proto._anim = function (type, callback) {
 
 proto._error = function (msg, clear) {
 	if(!msg) return;
-	throw new Error(msg);
 
 	if(clear) {
 		this._clear();
 	}
+
+	throw new Error(msg);
 }
 
 proto._clear = function () {
@@ -1040,6 +804,7 @@ proto._clear = function () {
 		delete this._o.contentEl;
 	}
 
+	this._o.state = "inited";
 
 	delete this._o.content
 	delete this._o.showTimeout
@@ -1128,13 +893,7 @@ njPopover.defaults = {
 	anim: 'fade',//(false || string) name of animation, or string with space separated 2 names of show/hide animation
 	duration: 'auto',//(string || number || auto) duration of animation, or string with space separated 2 duration of show/hide animation. You can set 'auto 100' if you want to set only duration for hide
 
-	// load: '<img src="img/spinner.gif" alt="loading" />',//(html) html of element that will be used as content for loading status
-	load: 'loading...',//(html) html of element that will be used as content for loading status
-	timeout: 2000,//(number) ajax timeout
-	// ajaxHandler: function() {},//(function) callback that will be fired when ajax complete
 
-	imgs: '[data-njp-img]',//(boolean false || selector) if imgs selector is presented, plugin will find images matches to this selector in popover, and wait until they begin downloading(to know it's size), only than show popover 
-	imgsspinner: true,//(boolean) if imgs option is used, this option options instead of delay, show spinner or loading text in popover
 
 	autobind: '[data-toggle~="popover"]'//(selector) selector that will be used for autobind
 }
