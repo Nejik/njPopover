@@ -132,19 +132,17 @@ proto.show = function () {//e - event, it sends only when showing in trigger ===
 	if(this._cb('show') === false) return;//callback show
 
 	var o = this.o,
-			that = this,
-			content;
+			that = this;
 
 	if(o.elem) this._gatherData();//update our settings
 
 	if(typeof o.content === 'function') {
-		content = o.content.call(this);
+		this._o.content = o.content.call(this);
 	} else {
-		content = o.content;
+		this._o.content = o.content;
 	}
-	this._o.content = content;//save computed content (needed for loading)
 
-	if(!content) {
+	if(!this._o.content) {
 		this._error('njPopover, no content for popover.', true);
 	}
 
@@ -175,80 +173,33 @@ proto.show = function () {//e - event, it sends only when showing in trigger ===
 	}
 	if(o.class) this.v.popover.addClass(o.class);
 
-
-	//set content
-	switch(o.type) {
-	case 'html':
-		this.v.popover.html(content)
-	break;
-	case 'selector':
-		this._o.contentEl = $(content);
-
-		if(this._o.contentEl.length) {
-			//make element visible
-			if(this._o.contentEl.css('display') === 'none') {
-				this._o.contentEl.css('display', 'block');
-				this._o.contentDisplayNone = true;//flag shows that element we used as content, initially was hidden
-			}
-
-			this.v.popover.append(this._o.contentEl);
-		} else {
-			this._error('njPopover, wrong content selector or no such element.', true)
-		}
-	break;
-	}
-
-	if(typeof o.imgs === 'string') {
+	if(o.type === 'ajax') {
 		if(njPopover.a.extended) {
-			this._waitImgs('popover');
+			this.ajax(o.content);
 		} else {
-			this._error('njPopover, you should use njPopover extended addon to use ajax or o.imgs.', true);
+			this._error('njPopover, you should enable ajax addon.', true)
 		}
-	} else if(o.type === 'ajax') {
-		
+	} else {
+		if(!this._o.loading) this._insertContent(this._o.content, o.type);
 	}
 
+	this.v.container.prepend(this.v.wrap);//we prepend, not append, because append of even absolute div, changes height of body(it's bad for positioning)
 
+	//initial position
+	this.position();
 
-	
-	this._insertPopover();
+	//i don't know why, but elem.getBoundingClientRect used on elem stops any future transitions(june 2015), thats why after position, we hides and show elem again(also we can remove and append element again)
+	this.v.wrap.css('display','none');
+	this.v.wrap[0].clientHeight;//force relayout
+	this.v.wrap.css('display','block');
 
-
-
-
-	
-
-	// if(o.type === 'ajax') {
-	// 	this.ajax(o.content);
-	// } else if(typeof o.imgs === 'string') {
-	// 	this._waitImgs('popover');
-	// }
-
-	// if(o.type === 'ajax') {
-	// 	if(njPopover.a.extended) {//if we have ajax addon
-	// 		this.ajax(o.content);
-	// 	} else {
-	// 		this._error('njPopover, you should use njPopover extended addon to use ajax.', true);
-	// 	}
-	// } else {
-	// 	this._insertContent(content);
-	// }
-
-	// if(typeof o.imgs === 'string') {
-	// 	if(njPopover.a.extended) {
-	// 		this._waitImgs({
-	// 			callback: 'popover',
-	// 		});
-	// 	} else {
-	// 		this._error('njPopover, you should use njPopover extended addon to use o.imgs', true);
-	// 	}
-	// } else {
-	// 	this._insertPopover(e);
+	// if(anim) {
+		this._anim('show');
 	// }
 
 
 
-
+	//set event handlers
 	if(o.out) {
 		this.v.document.on('click.njp.njp_out_'+this._o.id, function (e) {
 			var $el = $(e.target);
@@ -285,23 +236,34 @@ proto.show = function () {//e - event, it sends only when showing in trigger ===
 	return this;
 }
 
-proto._insertPopover = function (e) {
-	var o = this.o,
-		that = this;
+proto._insertContent = function (content, type) {
+	type = type || 'html';
+	var o = this.o;
 
-	this.v.container.prepend(this.v.wrap);//we prepend, not append, because append of even absolute div, changes height of body(it's bad for positioning)
+	//set content
+	switch(type) {
+	case 'text':
+		this.v.popover.text(content)
+	break;
+	case 'html':
+		this.v.popover.html(content)
+	break;
+	case 'selector':
+		this._o.contentEl = $(content);
 
-	//initial position
-	this.position(e);
+		if(this._o.contentEl.length) {
+			//make element visible
+			if(this._o.contentEl.css('display') === 'none') {
+				this._o.contentEl.css('display', 'block');
+				this._o.contentDisplayNone = true;//flag shows that element we used as content, initially was hidden
+			}
 
-	//i don't know why, but elem.getBoundingClientRect used on elem stops any future transitions(june 2015), thats why after position, we hides and show elem again(also we can remove and append element again)
-	this.v.wrap.css('display','none');
-	this.v.wrap[0].clientHeight;//force relayout
-	this.v.wrap.css('display','block');
-
-	// if(anim) {
-		this._anim('show');
-	// }
+			this.v.popover.append(this._o.contentEl);
+		} else {
+			this._error('njPopover, wrong content selector or no such element.', true)
+		}
+	break;
+	}
 }
 
 proto.hide = function () {
@@ -828,10 +790,27 @@ proto._clear = function () {
 	delete this._o.content
 	delete this._o.showTimeout
 	this._o.coords = {};
-	delete this._o.loading;
+	
+	if(this._o.xhr) {
+		this.ajax('stop');
+	}
+	// // console.log(this._o)
+	// if(this._o.xhr) {
+	// 	// this.ajax('stop');
+	// 	// this._o.xhr.aborted = true;//needed for disable error handler
+	// 	// this._o.xhr.abort();
+	// } else {
+	// }
 
-	delete this._o.xhr;
-	delete this._o.xhrTimeout;
+
+	// delete this._o.loading;
+	// delete this._o.xhr;
+	// delete this._o.xhrTimeout;
+	//stops ajax
+	// if(this._o.xhr) {
+	// 	this.ajax('stop');
+	// 	// that.loading('off', 'njPopover, ajax fail/abort from this url:'+that._o.content,'text');
+	// }
 
 	//delete all variables, because they generated new on every show
 	delete this.v.container;
@@ -850,13 +829,15 @@ proto._isNumber = function (n) {
 //callbacks
 proto._cb = function (type) {//cb - callback
 	var o = this.o;
-
+	// console.log(type)
 
 	if( type !== 'position' &&
 		type !== 'positioned' &&
 		type !== 'loading' &&
 		type !== 'loaded' &&
-		type !== 'destroy'
+		type !== 'destroy' &&
+		type !== 'ajaxReady' &&
+		type !== 'imagesReady'
 		) {
 		this._o.state = type;
 	}
@@ -898,7 +879,7 @@ njPopover.defaults = {
 
 	template:'<div class="njp-wrap" data-njp-wrap style="position:absolute;"><div class="njp" data-njp></div></div>',//(string) base HTML to use when creating the popover
 	attr: 'title',//get content for popover from this attribute, if there is no o.content option
-	type: 'html',//(html || selector) type of content, if selector used, whole element will be inserted in tooltip
+	type: 'html',//(html || selector || load) type of content, if selector used, whole element will be inserted in tooltip
 	content: '',//(string || function) content for popover
 	class: false,//(string) classnames(separated with space) that will be added to popover
 
