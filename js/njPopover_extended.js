@@ -79,14 +79,14 @@ njPopover.prototype.ajax = function (url) {
 
 				if(o.ajaxHandler) {
 					var t = {
-						data: this.responseText,
+						response: this.responseText,
 						xhr: this
 					};
 					if(o.ajaxHandler) {
-						o.ajaxHandler.call(that, t, that)
+						o.ajaxHandler.call(that, t)
 					}
 
-					response = t.data;
+					response = t.response;
 				} else {
 					response = this.responseText;
 				}
