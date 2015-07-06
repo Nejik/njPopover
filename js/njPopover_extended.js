@@ -127,7 +127,7 @@ njPopover.prototype.loading = function (state, content, type) {
 	case 'on':
 		if(this._o.loading) this._error('njPopover, popover already in loading state.');
 
-		if(this._o.state === 'inited') this.show();//show popover if it is hidden
+		if(this._o.state === 'inited') this.show(true);//show popover if it is hidden
 
 		if(!o.load) this._error('njPopover, you do not specify the content for inserting and o.load option is false.');
 		this.v.popover.html(o.load);
@@ -268,9 +268,6 @@ njPopover.prototype._insertContent = function (content, type) {
 		njpSetInterval(1);
 	}
 }
-
-
-
 
 njPopover.prototype._removeTrigger = function () {
 	var  o = this.o;

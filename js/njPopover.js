@@ -124,7 +124,7 @@ proto._init = function (opts) {
 	this._cb('inited');
 }
 
-proto.show = function () {//e - event, it sends only when showing in trigger === 'follow' mode
+proto.show = function (loading) {//loading - flag for showing popover already in loading state
 	if(this._o.state !== 'inited') {
 		this._error('njPopover, show, plugin not inited or in not inited state(probably animation is still running or plugin already visible).');
 	}
@@ -173,15 +173,18 @@ proto.show = function () {//e - event, it sends only when showing in trigger ===
 	}
 	if(o.class) this.v.popover.addClass(o.class);
 
-	if(o.type === 'ajax') {
-		if(njPopover.a.extended) {
-			this.ajax(o.content);
+	if(!loading) {
+		if(o.type === 'ajax') {
+			if(njPopover.a.extended) {
+				this.ajax(o.content);
+			} else {
+				this._error('njPopover, you should enable ajax addon.', true)
+			}
 		} else {
-			this._error('njPopover, you should enable ajax addon.', true)
+			if(!this._o.loading) this._insertContent(this._o.content, o.type);
 		}
-	} else {
-		if(!this._o.loading) this._insertContent(this._o.content, o.type);
 	}
+	
 
 	this.v.container.prepend(this.v.wrap);//we prepend, not append, because append of even absolute div, changes height of body(it's bad for positioning)
 
@@ -193,11 +196,7 @@ proto.show = function () {//e - event, it sends only when showing in trigger ===
 	this.v.wrap[0].clientHeight;//force relayout
 	this.v.wrap.css('display','block');
 
-	// if(anim) {
-		this._anim('show');
-	// }
-
-
+	this._anim('show');
 
 	//set event handlers
 	if(o.out) {
