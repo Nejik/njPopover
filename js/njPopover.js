@@ -308,25 +308,24 @@ proto.hide = function () {
 	return this;
 }
 
-proto.position = function (e) {
-	var opts = opts || {};
+proto.position = function (opts) {
+	
 	if(!this.v.wrap) return;//we can't set position of element, if there is no popover...
 
 	var o = this.o,
 		that = this,
-		coords;
+		coords,
+		mode;
 
 	(typeof o.margin === 'number') ? o.margin = o.margin : o.margin = 0;
 
-	opts.coords = opts.coords || this._cb('position') || o.coords;
-	opts.e = e;
-	
+	opts = opts || this._cb('position') || that._o.e || o.coords;
 	//if we have option with coordinates, use this coords
-	if(opts.coords) {
-		if(typeof opts.coords === 'string') {
-			coords = opts.coords.split(' ')
-		} else if(typeof opts.coords === 'function') {
-			coords = opts.coords.call(this).split(' ');
+	if(typeof opts === 'string' || typeof opts === 'function') {
+		if(typeof opts === 'string') {
+			coords = opts.split(' ')
+		} else if(typeof opts === 'function') {
+			coords = opts.call(this).split(' ');
 		}
 		
 		if($.isArray(coords) && coords.length === 2 && this._isNumber(coords[0]) && this._isNumber(coords[1])) {
@@ -347,19 +346,15 @@ proto.position = function (e) {
 	//if we don't have o.coords, calculate position	
 	var eC = this._o.coords.elemCoords = getCoords(o.elem),//trigger element coordinates
 		tC = this._o.coords.popoverCoords = getCoords(this.v.wrap[0]),//popover coordinates(coordinates now fake, from this var we need outerWidth/outerHeight)
+		vC = this._o.coords.viewportCoords = getCoords(this.v.viewport[0]),//viewport coordinates
 
 		left,
 		top;
 
-	if(this.v.viewport.length) {
-		var vC = this._o.coords.viewportCoords = getCoords(this.v.viewport[0]);//viewport coordinates
-	}
-
-
-	if(o.trigger === 'follow') {
-		if(opts.e) {
-			left = opts.e.pageX + o.margin;
-			top = opts.e.pageY + o.margin;
+	if(o.trigger === 'follow' && opts.pageX) {
+		if(opts) {
+			left = opts.pageX + o.margin;
+			top = opts.pageY + o.margin;
 		} else {
 			return;//we can't do anything, if there is no event with coordinates on follow mode
 		}
@@ -548,6 +543,7 @@ proto._setTrigger = function () {
 						that.show();
 					}
 				} else {
+					that._o.e = e;
 					that.show();
 				}
 				
@@ -793,6 +789,8 @@ proto._clear = function () {
 	if(this._o.xhr) {
 		this.ajax('stop');
 	}
+
+	delete this._o.e;
 	// // console.log(this._o)
 	// if(this._o.xhr) {
 	// 	// this.ajax('stop');
