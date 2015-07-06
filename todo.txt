@@ -1,5 +1,4 @@
 //переделать timeout-ы на transitionEnd/animationEnd, просто определять наидлиннейший транзишен и на него биндить
-//в hide, почему-то не закрывать пока state loading
 //пофиксить глобальные функции last, hide
 //adapters to prototype, ember - opentip
 
@@ -22,3 +21,9 @@
 -статус loading можно проверить в this._o.loading
 -autobind нет смысла указывать в опциях
 -если любому элементу дать data-njp-close, он будет закрывающей кнопкой
+-position может быть функцией
+
+
+
+//расписать про аддон extended
+*не забыть про ajaxHandler

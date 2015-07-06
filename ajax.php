@@ -1,5 +1,5 @@
 <?php
-	sleep(2);
+	sleep(3);
 	// echo "ajax content";
 	// echo json_encode(array('header' => 'ajax header', 'content' => 'lorem','footer' => 'ajax footer'));
 	// echo json_encode(array('file' => 'test.png', 'error' => 'error'));

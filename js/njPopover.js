@@ -178,7 +178,7 @@ proto.show = function (loading) {//loading - flag for showing popover already in
 			if(njPopover.a.extended) {
 				this.ajax(o.content);
 			} else {
-				this._error('njPopover, you should enable ajax addon.', true)
+				this._error('njPopover, you should enable extended addon.', true)
 			}
 		} else {
 			if(!this._o.loading) this._insertContent(this._o.content, o.type);
@@ -235,35 +235,7 @@ proto.show = function (loading) {//loading - flag for showing popover already in
 	return this;
 }
 
-proto._insertContent = function (content, type) {
-	type = type || 'html';
-	var o = this.o;
 
-	//set content
-	switch(type) {
-	case 'text':
-		this.v.popover.text(content)
-	break;
-	case 'html':
-		this.v.popover.html(content)
-	break;
-	case 'selector':
-		this._o.contentEl = $(content);
-
-		if(this._o.contentEl.length) {
-			//make element visible
-			if(this._o.contentEl.css('display') === 'none') {
-				this._o.contentEl.css('display', 'block');
-				this._o.contentDisplayNone = true;//flag shows that element we used as content, initially was hidden
-			}
-
-			this.v.popover.append(this._o.contentEl);
-		} else {
-			this._error('njPopover, wrong content selector or no such element.', true)
-		}
-	break;
-	}
-}
 
 proto.hide = function () {
 	if(this._o.state !== 'show' && this._o.state !== 'shown' && this._o.state !== 'loading') {
@@ -309,7 +281,6 @@ proto.hide = function () {
 }
 
 proto.position = function (opts) {
-	
 	if(!this.v.wrap) return;//we can't set position of element, if there is no popover...
 
 	var o = this.o,
@@ -319,7 +290,7 @@ proto.position = function (opts) {
 
 	(typeof o.margin === 'number') ? o.margin = o.margin : o.margin = 0;
 
-	opts = opts || this._cb('position') || that._o.e || o.coords;
+	opts = opts || that._o.e || o.coords;
 	//if we have option with coordinates, use this coords
 	if(typeof opts === 'string' || typeof opts === 'function') {
 		if(typeof opts === 'string') {
@@ -586,7 +557,35 @@ proto._setTrigger = function () {
 	}
 }
 
+proto._insertContent = function (content, type) {
+	type = type || 'html';
+	var o = this.o;
 
+	//set content
+	switch(type) {
+	case 'text':
+		this.v.popover.text(content)
+	break;
+	case 'html':
+		this.v.popover.html(content)
+	break;
+	case 'selector':
+		this._o.contentEl = $(content);
+
+		if(this._o.contentEl.length) {
+			//make element visible
+			if(this._o.contentEl.css('display') === 'none') {
+				this._o.contentEl.css('display', 'block');
+				this._o.contentDisplayNone = true;//flag shows that element we used as content, initially was hidden
+			}
+
+			this.v.popover.append(this._o.contentEl);
+		} else {
+			this._error('njPopover, wrong content selector or no such element.', true)
+		}
+	break;
+	}
+}
 
 proto._gatherData = function (first) {//first - only first, initial data gather
 	var o = this.o,
@@ -791,23 +790,6 @@ proto._clear = function () {
 	}
 
 	delete this._o.e;
-	// // console.log(this._o)
-	// if(this._o.xhr) {
-	// 	// this.ajax('stop');
-	// 	// this._o.xhr.aborted = true;//needed for disable error handler
-	// 	// this._o.xhr.abort();
-	// } else {
-	// }
-
-
-	// delete this._o.loading;
-	// delete this._o.xhr;
-	// delete this._o.xhrTimeout;
-	//stops ajax
-	// if(this._o.xhr) {
-	// 	this.ajax('stop');
-	// 	// that.loading('off', 'njPopover, ajax fail/abort from this url:'+that._o.content,'text');
-	// }
 
 	//delete all variables, because they generated new on every show
 	delete this.v.container;
