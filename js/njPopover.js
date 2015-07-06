@@ -243,8 +243,6 @@ proto.hide = function () {
 		this._error('njPopover, hide, we can hide only showed popovers (probably animation is still running).')
 	}
 
-	if(this._cb('hide') === false) return;//callback hide
-
 	var o = this.o,
 		that = this;
 
@@ -258,6 +256,8 @@ proto.hide = function () {
 			delete this._o.showTimeout;
 		}
 	}
+
+	if(this._cb('hide') === false) return;//callback hide
 
 	this._anim('hide', removePopover);
 
