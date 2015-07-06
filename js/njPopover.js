@@ -660,7 +660,7 @@ proto._getMaxTransitionDuration = function (el, property) {//method also can get
 	if(!property) return 0;
 
 	//make array with durations
-	dur = $el.css(property);
+	dur = $el.css(property+'Duration');
 	if (!dur || dur == undefined) dur = '0s';
 	durArr = dur.split(', ');
 	for (var i = 0, l = durArr.length; i < l ;i++) {
@@ -668,7 +668,7 @@ proto._getMaxTransitionDuration = function (el, property) {//method also can get
 	}
 
 	//make array with delays
-	del = $el.css(property);
+	del = $el.css(property+'Delay');
 	if (!del || del == undefined) del = '0s';
 	delArr = del.split(', ');
 	for (var i = 0, l = delArr.length; i < l ;i++) {
@@ -696,7 +696,7 @@ proto._anim = function (type, callback) {
 	if(o.anim) {//make animation names
 		tmp = o.anim.split(' ');
 		animShow = tmp[0];
-		(tmp[1]) ? animHide = tmp[1] : animHide = tmp[0];
+		(tmp[1]) ? animHide = tmp[1] : animHide = animShow;
 	}
 
 	//get animation durations
@@ -716,10 +716,14 @@ proto._anim = function (type, callback) {
 
 
 			if(!animShowDur || animShowDur === 'auto') {
-				animShowDur = that._getMaxTransitionDuration(this.v.popover[0], 'animationDuration') || that._getMaxTransitionDuration(this.v.popover[0], 'transitionDuration');
+				animShowDur = that._getMaxTransitionDuration(this.v.popover[0], 'animation') || that._getMaxTransitionDuration(this.v.popover[0], 'transition');
 			} else {//if duration was set via options, transform it to number
 				animShowDur = parseInt(animShowDur) || 0;
 			}
+
+			// this._getLongestTransition(this.v.popover[0], 'transition');
+
+
 
 
 			this._o.showTimeout = setTimeout(function(){
@@ -743,7 +747,7 @@ proto._anim = function (type, callback) {
 			this.v.popover.addClass('njp-hidden-'+animHide);
 
 			if(!animHideDur || animHideDur === 'auto') {
-				animHideDur = that._getMaxTransitionDuration(this.v.popover[0], 'animationDuration') || that._getMaxTransitionDuration(this.v.popover[0], 'transitionDuration');
+				animHideDur = that._getMaxTransitionDuration(this.v.popover[0], 'animation') || that._getMaxTransitionDuration(this.v.popover[0], 'transition');
 			} else {//if duration was set via options, transform it to number
 				animHideDur = parseInt(animHideDur) || 0;
 			}
@@ -802,6 +806,7 @@ proto._clear = function () {
 
 
 proto._isNumber = function (n) {
+
 	return !isNaN(parseFloat(n)) && isFinite(n);
 }
 
@@ -871,8 +876,6 @@ njPopover.defaults = {
 
 	anim: 'fade',//(false || string) name of animation, or string with space separated 2 names of show/hide animation
 	duration: 'auto',//(string || number || auto) duration of animation, or string with space separated 2 duration of show/hide animation. You can set 'auto 100' if you want to set only duration for hide
-
-
 
 	autobind: '[data-toggle~="popover"]'//(selector) selector that will be used for autobind
 }
