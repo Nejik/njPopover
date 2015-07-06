@@ -1,4 +1,3 @@
-//переделать timeout-ы на transitionEnd/animationEnd, просто определять наидлиннейший транзишен и на него биндить
 //пофиксить глобальные функции last, hide
 //adapters to prototype, ember - opentip
 

@@ -173,7 +173,8 @@ proto.show = function (loading) {//loading - flag for showing popover already in
 	}
 	if(o.class) this.v.popover.addClass(o.class);
 
-	if(!loading) {
+
+	if(!loading) {//for case when we call .loading('on') when popover is hidden
 		if(o.type === 'ajax') {
 			if(njPopover.a.extended) {
 				this.ajax(o.content);
@@ -238,7 +239,7 @@ proto.show = function (loading) {//loading - flag for showing popover already in
 
 
 proto.hide = function () {
-	if(this._o.state !== 'show' && this._o.state !== 'shown' && this._o.state !== 'loading') {
+	if(this._o.state !== 'show' && this._o.state !== 'shown') {
 		this._error('njPopover, hide, we can hide only showed popovers (probably animation is still running).')
 	}
 
@@ -721,16 +722,11 @@ proto._anim = function (type, callback) {
 				animShowDur = parseInt(animShowDur) || 0;
 			}
 
-			// this._getLongestTransition(this.v.popover[0], 'transition');
-
-
-
-
 			this._o.showTimeout = setTimeout(function(){
 				clearTimeout(that._o.showTimeout);
 				delete that._o.showTimeout;
 
-				// that.v.popover.removeClass('njp-show-' + animShow + ' ' + 'njp-shown-' + animShow);
+				that.v.popover.removeClass('njp-show-' + animShow + ' ' + 'njp-shown-' + animShow);
 
 				that._cb('shown');
 			}, animShowDur);
@@ -765,9 +761,7 @@ proto._anim = function (type, callback) {
 proto._error = function (msg, clear) {
 	if(!msg) return;
 
-	if(clear) {
-		this._clear();
-	}
+	if(clear) this._clear();
 
 	throw new Error(msg);
 }
@@ -813,7 +807,6 @@ proto._isNumber = function (n) {
 //callbacks
 proto._cb = function (type) {//cb - callback
 	var o = this.o;
-	// console.log(type)
 
 	if( type !== 'position' &&
 		type !== 'positioned' &&
