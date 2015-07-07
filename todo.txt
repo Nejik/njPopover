@@ -1,5 +1,5 @@
 //пофиксить глобальные функции last, hide
-//adapters to prototype, ember - opentip
+
 
 
 //в хелп

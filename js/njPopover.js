@@ -51,10 +51,10 @@ njPopover.instances =	{//we make array like object with all active instances of 
 
 njPopover.a = {};//addons
 
-njPopover.getLast = njPopover.last = function () {//public function that returns last instance of popover
+njPopover.getLast = function () {//public function that returns last instance of popover
 	return njPopover.instances[njPopover.instances.length - 1];
 }
-njPopover.hideLast = njPopover.hide = function () {//public function that close last instance of popover
+njPopover.hideLast = function () {//public function that close last instance of popover
 	if(njPopover.instances.length) return njPopover.instances[njPopover.instances.length - 1].hide();
 }
 njPopover.forElement = function (elem) {//return instance
@@ -71,6 +71,7 @@ proto._init = function (opts) {
 		that = this;
 
 	this._o = {//inner options
+		'visible': false,
 		'coords':{}
 	};
 
@@ -291,7 +292,7 @@ proto.position = function (opts) {
 
 	(typeof o.margin === 'number') ? o.margin = o.margin : o.margin = 0;
 
-	opts = opts || that._o.e || o.coords;
+	opts = opts || that.o.e || o.coords;
 	//if we have option with coordinates, use this coords
 	if(typeof opts === 'string' || typeof opts === 'function') {
 		if(typeof opts === 'string') {
@@ -515,13 +516,14 @@ proto._setTrigger = function () {
 						that.show();
 					}
 				} else {
-					that._o.e = e;
+					that.o.e = e;
 					that.show();
 				}
 				
 				if(o.trigger === 'follow') {
 					that.v.document.on('mousemove.njp.njp_'+that._o.id, function (e) {
-						that.position(e);
+						that.o.e = e;
+						that.position();
 					})
 				}
 			})
@@ -709,6 +711,7 @@ proto._anim = function (type, callback) {
 
 	switch(type) {
 	case 'show':
+		this._o.visible = true;
 		if(animShow) {
 			this.v.popover.addClass('njp-show-'+animShow);
 			if(this.v.wrap.css('visibility') === 'hidden') this.v.wrap.css('visibility','visible');
@@ -749,6 +752,7 @@ proto._anim = function (type, callback) {
 			}
 
 			setTimeout(function(){
+				that._o.visible = false;
 				callback();
 			}, animHideDur)
 		} else {
@@ -787,7 +791,7 @@ proto._clear = function () {
 		this.ajax('stop');
 	}
 
-	delete this._o.e;
+	delete this.o.e;
 
 	//delete all variables, because they generated new on every show
 	delete this.v.container;
