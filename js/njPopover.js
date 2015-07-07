@@ -156,7 +156,7 @@ proto.show = function (loading) {//loading - flag for showing popover already in
 
 
 	this.v.wrap = $(o.template).css({'position':'absolute','visibility':'hidden'});
-	if(!this.v.wrap) {
+	if(!this.v.wrap.length) {
 		this._error('njPopover,smth wrong with o.template.', true);
 	}
 	if(o.zindex) this.v.wrap.css({'zIndex':o.zindex});
