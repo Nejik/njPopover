@@ -859,7 +859,7 @@ njPopover.defaults = {
 
 	template:'<div class="njp-wrap" data-njp-wrap style="position:absolute;"><div class="njp" data-njp></div></div>',//(string) base HTML to use when creating the popover
 	attr: 'title',//get content for popover from this attribute, if there is no o.content option
-	type: 'html',//(html || selector || load) type of content, if selector used, whole element will be inserted in tooltip
+	type: 'html',//(html || selector || text) type of content, if selector used, whole element will be inserted in tooltip
 	content: '',//(string || function) content for popover
 	class: false,//(string) classnames(separated with space) that will be added to popover
 
