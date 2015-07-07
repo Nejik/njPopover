@@ -152,9 +152,8 @@ proto.show = function (loading) {//loading - flag for showing popover already in
 	}
 
 	this.v.container = $(o.container);
-	if(!this.v.container.length) {
-		this._error('njPopover, no container for popover.', true);
-	}
+	if(!this.v.container.length) this.v.container = this.v.body;//in case if we have no container element, or wrong selector for container element
+
 
 	this.v.wrap = $(o.template).css({'position':'absolute','visibility':'hidden'});
 	if(!this.v.wrap) {
