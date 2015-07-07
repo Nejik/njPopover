@@ -466,8 +466,8 @@ proto.destroy = function () {
 	} 
 	finally {
 		//remove all handlers
-		if(o.elem) o.$elem.off('.njp');
-		this.v.document.off('.njp');
+		if(o.elem) o.$elem.off('.njp_'+this._o.id);
+		this.v.document.off('.njp_'+this._o.id);
 
 		//restore attribute for element
 		if(this._o.origTitle) {
