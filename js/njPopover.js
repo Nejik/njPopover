@@ -162,8 +162,8 @@ proto.show = function (loading) {//loading - flag for showing popover already in
 	if(o.zindex) this.v.wrap.css({'zIndex':o.zindex});
 
 	this.v.wrap[0].njPopover = this;
-	(o.viewport === 'document') ? this.v.viewport = this.v.document : this.v.viewport = $(o.viewport);
 
+	(o.viewport === 'document') ? this.v.viewport = this.v.document : this.v.viewport = $(o.viewport);
 	if(!this.v.viewport.length) this.v.viewport = this.v.document;//in case if we have no viewport element, or wrong selector for viewport element
 	
 	//find element where we should set content
@@ -179,7 +179,7 @@ proto.show = function (loading) {//loading - flag for showing popover already in
 			if(njPopover.a.extended) {
 				this.ajax(o.content);
 			} else {
-				this._error('njPopover, you should enable extended addon.', true)
+				this._error('njPopover, you should enable extended addon.', true);
 			}
 		} else {
 			if(!this._o.loading) this._insertContent(this._o.content, o.type);
@@ -272,8 +272,8 @@ proto.hide = function () {
 	that.v.document.off('click.njp_out_'+that._o.id);
 	that.v.document.off('click.njp_close.njp_'+that._o.id);
 	if(o.trigger === 'follow') {
-		that.v.document.off('mousemove.njp.njp_'+that._o.id)
-		that.v.document.off('mouseleave.njp.njp_'+that._o.id)
+		that.v.document.off('mousemove.njp_'+that._o.id)
+		that.v.document.off('mouseleave.njp_'+that._o.id)
 	}
 	that.v.window.off('resize.njp_'+that._o.id);
 
@@ -578,7 +578,7 @@ proto._insertContent = function (content, type) {
 			//make element visible
 			if(this._o.contentEl.css('display') === 'none') {
 				this._o.contentEl.css('display', 'block');
-				this._o.contentDisplayNone = true;//flag shows that element we used as content, initially was hidden
+				this._o.contentElDisplayNone = true;//flag shows that element we used as content, initially was hidden
 			}
 
 			this.v.popover.append(this._o.contentEl);
@@ -770,9 +770,9 @@ proto._error = function (msg, clear) {
 }
 
 proto._clear = function () {
-	if(this._o.contentDisplayNone) {
+	if(this._o.contentElDisplayNone) {
 		this._o.contentEl.css('display', 'none');
-		delete this._o.contentDisplayNone;
+		delete this._o.contentElDisplayNone;
 	}
 
 	if(this._o.contentEl) {
