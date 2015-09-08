@@ -429,19 +429,29 @@ proto.position = function (opts) {
 				clientTop = docEl.clientTop || body.clientTop || 0,
 				clientLeft = docEl.clientLeft || body.clientLeft || 0;
 
+
 			return {
-				top: box.top + scrollTop - clientTop,
+				top: box.top + (o.fixed ? 0 : scrollTop) - clientTop,
 				left: box.left + scrollLeft - clientLeft,
 
 				right: box.right + scrollLeft - clientLeft,
-				bottom: box.bottom + scrollTop - clientTop,
+				bottom: box.bottom + (o.fixed ? 0 : scrollTop) - clientTop,
 				width: box.right - box.left,
 				height: box.bottom - box.top
 			};
+			// return {
+			// 	top: box.top + scrollTop - clientTop,
+			// 	left: box.left + scrollLeft - clientLeft,
+
+			// 	right: box.right + scrollLeft - clientLeft,
+			// 	bottom: box.bottom + scrollTop - clientTop,
+			// 	width: box.right - box.left,
+			// 	height: box.bottom - box.top
+			// };
 		}
 	}
 
-	this.v.wrap.css({'left':left+'px',"top":top+'px'});
+	this.v.wrap.css({'left':left+'px',"top":top +'px'});
 	
 
 	//remember proper coordinates
@@ -811,20 +821,20 @@ proto._isNumber = function (n) {
 proto._cb = function (type) {//cb - callback
 	var o = this.o;
 
-	if( type !== 'position' &&
-		type !== 'positioned' &&
-		type !== 'loading' &&
-		type !== 'loaded' &&
-		type !== 'destroy' &&
-		type !== 'ajaxReady' &&
-		type !== 'imagesReady'
-		) {
+	if(type === 'inited' ||
+	   type === 'show'   ||
+	   type === 'shown'  ||
+	   type === 'hide'   ||
+	   type === 'hidden') {
+
 		this._o.state = type;
 	}
 
-	if(type === 'hidden') this._o.state = 'inited';
 
 	switch(type) {
+	case 'hidden':
+		this._o.state = 'inited'
+	break;
 	case 'loading':
 		this._o.loading = true;
 	break;
@@ -855,6 +865,7 @@ njPopover.defaults = {
 	trigger: 'click',//(false || click || hover || focus || follow) how popover is triggered. false - manual triggering
 	out: true,//(boolean || all) click outside popover will close it, if all is selected click on popover will hide it
 	margin: 5,//(number) margin from element
+	fixed: false,//(boolean) if true, scrolltop will not be added to popover, todo - autodetect fixed position
 
 
 	template:'<div class="njp-wrap" data-njp-wrap><div class="njp" data-njp></div></div>',//(string) base HTML to use when creating the popover
